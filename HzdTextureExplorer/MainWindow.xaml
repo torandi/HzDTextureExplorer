@@ -10,6 +10,8 @@
 		<ToolBarTray DockPanel.Dock="Top">
 			<ToolBar>
 				<Button Click="ToolBar_Open" Content="Open"/>
+				<Button Click="ToolBar_ExportSingle" Content="Export Selected"/>
+				<Button Click="ToolBar_ExportAll" Content="Export All"/>
 				<Button Click="ToolBar_Save" Content="Save"/>
 			</ToolBar>
 		</ToolBarTray>

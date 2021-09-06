@@ -63,7 +63,55 @@ namespace HzdTextureExplorer
         }
         private void ToolBar_Save(object sender, RoutedEventArgs e)
         {
+            // todo: confirm
             SaveCoreFile();
+        }
+
+        private void ToolBar_ExportSingle(object sender, RoutedEventArgs e)
+        {
+            Texture tex = Info.SelectedItem as Texture;
+            if (tex == null)
+            {
+                MessageBox.Show("No Texture selected.");
+                return;
+            }
+
+            try
+            {
+                string path = Path.GetDirectoryName(m_core.Path);
+                string file = $"{path}/{tex.Name}.dds";
+                tex.WriteDds(file);
+                MessageBox.Show($"Exported to {file}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occured while exporting: {ex.Message}");
+            }
+        }
+
+        private void ToolBar_ExportAll(object sender, RoutedEventArgs e)
+        {
+            if (m_core == null)
+            {
+                MessageBox.Show("No core file open.");
+                return;
+            }
+
+            try
+            {
+                string path = Path.GetDirectoryName(m_core.Path);
+                foreach (Texture tex in m_core.Textures)
+                {
+                    string file = $"{path}/{tex.Name}.dds";
+                    tex.WriteDds(file);
+                }
+
+                MessageBox.Show($"Exported {m_core.Textures.Count} files to {path}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occured while exporting: {ex.Message}");
+            }
         }
 
         private void LoadCoreFile(String path)
@@ -82,16 +130,23 @@ namespace HzdTextureExplorer
                 return;
             }
 
-            m_core = new HzDCore(path);
-
-            Debug.WriteLine("Loaded {path}");
-
-            Images.Items.Clear();
-            Images.DisplayMemberPath = "Name";
-
-            foreach(Texture tex in m_core.Textures)
+            try
             {
-                Images.Items.Add(tex);
+
+                m_core = new HzDCore(path);
+
+                Debug.WriteLine("Loaded {path}");
+
+                Images.Items.Clear();
+                Images.DisplayMemberPath = "Name";
+
+                foreach (Texture tex in m_core.Textures)
+                {
+                    Images.Items.Add(tex);
+                }
+            } catch (Exception e)
+            {
+                MessageBox.Show($"An error occured while loading: {e.Message}");
             }
         }
 
@@ -119,8 +174,6 @@ namespace HzdTextureExplorer
             AddInfo("Width", data.Width);
             AddInfo("Height", data.Height);
             AddInfo("Format", data.Format.ToString());
-
-            Stream textureStream = m_core.OpenTexture(tex);
 
             Preview.Source = tex.Image.Bitmap;
         }

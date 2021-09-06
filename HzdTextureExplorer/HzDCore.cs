@@ -75,15 +75,20 @@ namespace HzdTextureExplorer
             return reader.ReadBytes((int)size);
         }
 
+        public void WriteTexture(Texture texture, BinaryWriter writer)
+        {
+
+            Helper.WriteDdsHeader(writer, texture.ImageData.Width, texture.ImageData.Height, texture.ImageData.Format);
+            writer.Write(ReadStreamData(texture.ImageData.StreamStart, texture.ImageData.StreamEnd));
+            writer.Flush();
+        }
+
         public Stream OpenTexture(Texture texture)
         {
             MemoryStream stream = new MemoryStream((int)(148 + texture.ImageData.StreamSize));
             BinaryWriter writer = new BinaryWriter(stream);
-            Helper.WriteDdsHeader(writer, texture.ImageData.Width, texture.ImageData.Height, texture.ImageData.Format);
 
-            writer.Write(ReadStreamData(texture.ImageData.StreamStart, texture.ImageData.StreamEnd));
-
-            writer.Flush();
+            WriteTexture(texture, writer);
 
             stream.Position = 0;
 
@@ -189,8 +194,7 @@ namespace HzdTextureExplorer
                     ddsFormat.ABitMask = 0;
                     break;
                 default:
-                    Debug.Assert(false, "Only BC5U and BC7 support right now"); // todo message box
-                    return;
+                    throw new HzDException("Only BC5U and BC7 support right now");
             }
 
             writer.Write(ddsFormat.Size);
@@ -363,13 +367,12 @@ namespace HzdTextureExplorer
             Format = new ImageFormat(reader);
             Magic = reader.ReadBytes(4); // 0x00 0xA9 0xFF 0x00
 
-            Debug.Assert(Magic[0] == 0 && Magic[1] == 0xa9 && Magic[2] == 0xff && Magic[3] == 0x00, "Invalid magic in texture");
+            if(!(Magic[0] == 0 && Magic[1] == 0xa9 && Magic[2] == 0xff && Magic[3] == 0x00))
+                throw new HzDException("Invalid magic in texture");
 
             Hash = reader.ReadBytes(16);
 
             uint chunkSize = reader.ReadUInt32();
-
-            Debug.Assert(chunkSize == (size - (stream.Position - start)));
 
             LocalSize = reader.ReadUInt32();
             StreamSize = reader.ReadUInt32();
@@ -394,7 +397,8 @@ namespace HzdTextureExplorer
 
 
             long currentPos = start + size;
-            Debug.Assert(stream.Position == currentPos);
+            if (stream.Position != currentPos)
+                throw new HzDException("Read incorrect size in Texture");
         }
     }
 
@@ -493,6 +497,17 @@ namespace HzdTextureExplorer
 
             m_name = Helper.ReadString(reader);
             m_data = new ImageData(stream, reader, RemainingSize(stream));
+
+            // Preload texture
+            m_ddsImage = new DDSImage(Core.OpenTexture(this));
+        }
+
+        public void WriteDds(string fileName)
+        {
+            FileStream file = File.OpenWrite(fileName);
+            BinaryWriter writer = new BinaryWriter(file);
+            Core.WriteTexture(this, writer);
+            file.Close();
         }
 
     }
