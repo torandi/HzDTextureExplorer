@@ -583,9 +583,25 @@ namespace HzdTextureExplorer
                     throw new HzDException($"Invalid PixelFormat in dds. Expected BC5U");
                 }
             }
+            else if (ImageData.Format.Format == ImageFormat.Formats.BC6U)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC6H_UF16)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC6U");
+                }
+
+            }
+            else if (ImageData.Format.Format == ImageFormat.Formats.BC6S)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC6H_SF16)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC6S");
+                }
+
+            }
             else if (ImageData.Format.Format == ImageFormat.Formats.BC7)
             {
-                if(header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC7_UNORM)
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC7_UNORM)
                 {
                     throw new HzDException($"Invalid PixelFormat in dds. Expected BC7");
                 }
