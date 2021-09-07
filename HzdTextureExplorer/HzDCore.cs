@@ -72,27 +72,44 @@ namespace HzdTextureExplorer
             FileStream file = File.OpenRead(m_file + ".stream");
             BinaryReader reader = new BinaryReader(file);
             file.Position = (long)offset;
-            return reader.ReadBytes((int)size);
+            byte[] bytes = reader.ReadBytes((int)size);
+            file.Close();
+            return bytes;
+        }
+        private void WriteStreamData(UInt64 offset, byte[] data)
+        {
+            FileStream file = File.OpenWrite(m_file + ".stream");
+            BinaryWriter writer = new BinaryWriter(file);
+            file.Position = (long)offset;
+            writer.Write(data);
+            file.Close();
         }
 
-        public void WriteTexture(Texture texture, BinaryWriter writer)
-        {
 
-            Helper.WriteDdsHeader(writer, texture.ImageData.Width, texture.ImageData.Height, texture.ImageData.Format);
-            writer.Write(ReadStreamData(texture.ImageData.StreamStart, texture.ImageData.StreamEnd));
+        public void ReadImage(ImageData image, BinaryWriter writer)
+        {
+            Helper.WriteDdsHeader(writer, image.Width, image.Height, image.Format);
+            writer.Write(ReadStreamData(image.StreamStart, image.StreamEnd));
             writer.Flush();
         }
 
-        public Stream OpenTexture(Texture texture)
+        public Stream OpenImage(ImageData image)
         {
-            MemoryStream stream = new MemoryStream((int)(148 + texture.ImageData.StreamSize));
+            MemoryStream stream = new MemoryStream((int)(148 + image.StreamSize));
             BinaryWriter writer = new BinaryWriter(stream);
 
-            WriteTexture(texture, writer);
+            ReadImage(image, writer);
 
             stream.Position = 0;
 
             return stream;
+        }
+
+        public void UpdateImage(ImageData image, byte[] newData)
+        {
+            if (image.StreamEnd != (ulong)newData.Length)
+                throw new HzDException($"New data is not the right size!");
+            WriteStreamData(image.StreamStart, newData);
         }
 
     }
@@ -215,7 +232,7 @@ namespace HzdTextureExplorer
                 writer.Write((uint)Pfim.D3D10ResourceDimension.D3D10_RESOURCE_DIMENSION_TEXTURE2D);
                 writer.Write(dummy); // misc flag
                 writer.Write((uint)1); // array size
-                writer.Write(dummy); // alpha mode
+                writer.Write((uint)8); // alpha mode
             }
         }
     }
@@ -473,7 +490,7 @@ namespace HzdTextureExplorer
             get
             {
                 if (m_ddsImage == null)
-                    m_ddsImage = new DDSImage(Core.OpenTexture(this));
+                    m_ddsImage = new DDSImage(Core.OpenImage(ImageData));
 
                 return m_ddsImage;
             }
@@ -499,17 +516,74 @@ namespace HzdTextureExplorer
             m_data = new ImageData(stream, reader, RemainingSize(stream));
 
             // Preload texture
-            m_ddsImage = new DDSImage(Core.OpenTexture(this));
+            m_ddsImage = new DDSImage(Core.OpenImage(ImageData));
         }
 
         public void WriteDds(string fileName)
         {
             FileStream file = File.OpenWrite(fileName);
             BinaryWriter writer = new BinaryWriter(file);
-            Core.WriteTexture(this, writer);
+            Core.ReadImage(ImageData, writer);
             file.Close();
         }
 
+        public void UpdateImageData(string fileName)
+        {
+            FileStream file = File.OpenRead(fileName);
+
+            // Read header
+            Pfim.DdsHeader header = new Pfim.DdsHeader(file);
+            Pfim.DdsHeaderDxt10 dxt10Header = null;
+            if(header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10)
+            {
+                // Also read dxt10 header
+                dxt10Header = new Pfim.DdsHeaderDxt10(file);
+            }
+
+            if(header.Width != ImageData.Width || header.Height != ImageData.Height)
+            {
+                throw new HzDException($"Dimensions of imported dds file don't match. Must be {ImageData.Width}x{ImageData.Height}, but was {header.Width}x{header.Height}");
+            }
+
+            if (header.PixelFormat.Size != 32)
+                throw new HzDException($"Invalid PixelFormat in dds. Expected size to be 32, but was {header.PixelFormat.Size}");
+
+            if (header.PixelFormat.PixelFormatFlags != Pfim.DdsPixelFormatFlags.Fourcc)
+                throw new HzDException("PixelFormat missing FourcCC flag");
+
+
+            if (ImageData.Format.Format == ImageFormat.Formats.BC5U)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.ATI2)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC5U");
+                }
+            }
+            else if (ImageData.Format.Format == ImageFormat.Formats.BC7)
+            {
+                if(header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC7_UNORM)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC7");
+                }
+            }
+            else
+            {
+                throw new HzDException($"Unimplemented format in core file texture: {ImageData.Format.Format.ToString()}");
+            }
+
+            if (file.Position + ImageData.StreamSize != file.Length)
+                throw new HzDException($"File is not the right size. Expected to be able to read exactly {ImageData.StreamSize} bytes, but there are {file.Length - file.Position} bytes left in the file.");
+
+            byte[] imageData = new byte[ImageData.StreamSize];
+            int readBytes = file.Read(imageData, 0, (int)ImageData.StreamSize);
+            if (readBytes != ImageData.StreamSize)
+                throw new HzDException($"Could not read the required number of bytes from file. It must be the exact same size as the original file.");
+
+            Core.UpdateImage(ImageData, imageData);
+
+            // refresh cached image
+            m_ddsImage = new DDSImage(Core.OpenImage(ImageData));
+        }
     }
 
     class Misc : BaseItem

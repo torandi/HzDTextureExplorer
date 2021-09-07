@@ -61,15 +61,81 @@ namespace HzdTextureExplorer
                 }
             }
         }
-        private void ToolBar_Save(object sender, RoutedEventArgs e)
+        private void ToolBar_UpdateSingle(object sender, RoutedEventArgs e)
         {
-            // todo: confirm
-            SaveCoreFile();
+            Texture tex = Images.SelectedItem as Texture;
+            if (tex == null)
+            {
+                MessageBox.Show("No Texture selected.");
+                return;
+            }
+
+            using(var dialog = new System.Windows.Forms.OpenFileDialog())
+            {
+                dialog.InitialDirectory = m_core?.Path;
+                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds";
+                dialog.FilterIndex = 1;
+                dialog.RestoreDirectory = true;
+
+                if(dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    UpdateTexture(tex, dialog.FileName);
+                    MessageBox.Show($"{tex.Name} updated from {dialog.FileName}.");
+                }
+            }
+        }
+
+        private void UpdateTexture(Texture tex, string file)
+        {
+            try
+            {
+                tex.UpdateImageData(file);
+                if (tex == Images.SelectedItem)
+                {
+                    Preview.Source = tex.Image.Bitmap; // update preview
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occured while updating texture {tex.Name}: {ex.Message}");
+            }
+
+        }
+
+
+        private void ToolBar_UpdateAll(object sender, RoutedEventArgs e)
+        {
+            if (m_core == null)
+            {
+                MessageBox.Show("No core file open.");
+                return;
+            }
+
+            using(var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dialog.ShowNewFolderButton = false;
+
+                if(dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    foreach (Texture tex in m_core.Textures)
+                    {
+                        string path = $"{dialog.SelectedPath}\\{tex.Name}.dds";
+
+                        UpdateTexture(tex, path);
+                    }
+
+                    Texture sel = Images.SelectedItem as Texture;
+                    if(sel != null)
+                        Preview.Source = sel.Image.Bitmap;
+                    MessageBox.Show($"{m_core.Textures.Count} textures updated from {dialog.SelectedPath}.");
+                }
+            }
+
         }
 
         private void ToolBar_ExportSingle(object sender, RoutedEventArgs e)
         {
-            Texture tex = Info.SelectedItem as Texture;
+            Texture tex = Images.SelectedItem as Texture;
             if (tex == null)
             {
                 MessageBox.Show("No Texture selected.");
@@ -114,6 +180,29 @@ namespace HzdTextureExplorer
             }
         }
 
+        private void Context_Export(object sender, RoutedEventArgs e)
+        {
+            Texture tex = e.Source as Texture;
+            if (tex == null)
+                return;
+            try
+            {
+                string path = Path.GetDirectoryName(m_core.Path);
+                string file = $"{path}\\{tex.Name}.dds";
+                tex.WriteDds(file);
+                MessageBox.Show($"Exported to {file}");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occured while exporting: {ex.Message}");
+            }
+        }
+
+        private void Context_Update(object sender, RoutedEventArgs e)
+        {
+
+        }
+
         private void LoadCoreFile(String path)
         {
             string ext = Path.GetExtension(path);
@@ -148,11 +237,6 @@ namespace HzdTextureExplorer
             {
                 MessageBox.Show($"An error occured while loading: {e.Message}");
             }
-        }
-
-        private void SaveCoreFile()
-        {
-            // todo
         }
 
         private void AddInfo(string title, object item)
