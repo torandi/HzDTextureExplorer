@@ -200,6 +200,18 @@ namespace HzdTextureExplorer
                     ddsFormat.BBitMask = 0;
                     ddsFormat.ABitMask = 0;
                     break;
+                case ImageFormat.Formats.BC6U:
+                case ImageFormat.Formats.BC6S:
+                    ddsFormat.Size = 32;
+                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
+                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
+                    ddsFormat.RGBBitCount = 0;
+                    ddsFormat.RBitMask = 0;
+                    ddsFormat.GBitMask = 0;
+                    ddsFormat.BBitMask = 0;
+                    ddsFormat.ABitMask = 0;
+                    break;
+
                 case ImageFormat.Formats.BC7:
                     ddsFormat.Size = 32;
                     ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
@@ -211,7 +223,7 @@ namespace HzdTextureExplorer
                     ddsFormat.ABitMask = 0;
                     break;
                 default:
-                    throw new HzDException("Only BC5U and BC7 support right now");
+                    throw new HzDException($"Only BC5U, BC6 and BC7 support right now. Tried to write {format.Format.ToString()}");
             }
 
             writer.Write(ddsFormat.Size);
@@ -228,7 +240,19 @@ namespace HzdTextureExplorer
 
             if(ddsFormat.FourCC == Pfim.CompressionAlgorithm.DX10)
             {
-                writer.Write((uint)Pfim.DxgiFormat.BC7_UNORM);
+
+                switch (format.Format)
+                {
+                    case ImageFormat.Formats.BC6U:
+                        writer.Write((uint)Pfim.DxgiFormat.BC6H_UF16);
+                        break;
+                    case ImageFormat.Formats.BC6S:
+                        writer.Write((uint)Pfim.DxgiFormat.BC6H_SF16);
+                        break;
+                    case ImageFormat.Formats.BC7:
+                        writer.Write((uint)Pfim.DxgiFormat.BC7_UNORM);
+                        break;
+                }
                 writer.Write((uint)Pfim.D3D10ResourceDimension.D3D10_RESOURCE_DIMENSION_TEXTURE2D);
                 writer.Write(dummy); // misc flag
                 writer.Write((uint)1); // array size
