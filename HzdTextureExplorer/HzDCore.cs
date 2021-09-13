@@ -415,11 +415,11 @@ namespace HzdTextureExplorer
         public byte[] Hash; // maybe?
 
         public uint StreamSize;
-        public uint LocalSize;
+        public uint ThumbnailSize;
 
         public readonly ImageFormat Format;
 
-        public byte[] ImageContent;
+        public byte[] ThumbnailData;
 
         public UInt64 StreamStart;
         public UInt64 StreamEnd; // Length, same as StreamSize ?
@@ -452,7 +452,7 @@ namespace HzdTextureExplorer
 
             uint chunkSize = reader.ReadUInt32();
 
-            LocalSize = reader.ReadUInt32();
+            ThumbnailSize = reader.ReadUInt32();
             StreamSize = reader.ReadUInt32();
 
             if(StreamSize > 0)
@@ -468,11 +468,10 @@ namespace HzdTextureExplorer
             {
                 const int ImageParamsSize = 8; // 2 uints Size with and without stream
                 // padding:
-                reader.ReadBytes((int)(chunkSize - (ImageParamsSize + LocalSize)));
+                reader.ReadBytes((int)(chunkSize - (ImageParamsSize + ThumbnailSize)));
             }
-            ImageContent = reader.ReadBytes((int)LocalSize);
 
-
+            ThumbnailData = reader.ReadBytes((int)ThumbnailSize);
 
             long currentPos = start + size;
             if (stream.Position != currentPos)
@@ -678,6 +677,8 @@ namespace HzdTextureExplorer
 
             // refresh cached image
             m_ddsImage = new DDSImage(Core.OpenImage(ImageData));
+
+            // todo: update thumbnail in core file?
         }
     }
 
