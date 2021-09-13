@@ -14,8 +14,8 @@
 				<Button Click="ToolBar_ExportSingle" Content="Export Selected" ToolTip="Export selected image as dds"/>
 				<Button Click="ToolBar_ExportAll" Content="Export All" ToolTip="Export all images as dds"/>
 				<Separator/>
-				<Button Click="ToolBar_UpdateSingle" Content="Update Selected" ToolTip="Update selected image inplace (modifies core.stream file)"/>
-				<Button Click="ToolBar_UpdateAll" Content="Update All" ToolTip="Update all images inplace (modifies core.stream file)"/>
+				<Button Click="ToolBar_UpdateSingle" Content="Replace Selected" ToolTip="Replace selected image (modifies open file)"/>
+				<Button Click="ToolBar_UpdateAll" Content="Replace All" ToolTip="Replace all images (modifies open file)"/>
 			</ToolBar>
 		</ToolBarTray>
 		<Grid AllowDrop="True" Drop="OnDrop">

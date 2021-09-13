@@ -5,6 +5,9 @@ namespace HzdTextureExplorer
 {
     public class ImageData
     {
+        private long BasePosition;
+        private ulong EmbeddedPosition;
+
         public ushort Unknown1;
         public ImageSize Size;
         public ushort Unknown2;
@@ -54,7 +57,7 @@ namespace HzdTextureExplorer
 
         public ImageData(FileStream stream, BinaryReader reader, long size)
         {
-            long start = stream.Position;
+            BasePosition = stream.Position;
             if (size == 0)
                 return;
 
@@ -91,9 +94,11 @@ namespace HzdTextureExplorer
                 reader.ReadBytes((int)(chunkSize - (ImageParamsSize + EmbeddedSize)));
             }
 
+            EmbeddedPosition = (ulong)stream.Position;
+
             EmbeddedData = reader.ReadBytes((int)EmbeddedSize);
 
-            long currentPos = start + size;
+            long currentPos = BasePosition + size;
             if (stream.Position != currentPos)
                 throw new HzDException("Read incorrect size in Texture");
         }
@@ -172,18 +177,26 @@ namespace HzdTextureExplorer
             }
 
 
-            // todo: handle local image only!
-            byte[] imageData = new byte[StreamSize];
-            int readBytes = file.Read(imageData, 0, (int)StreamSize);
-            if (readBytes != StreamSize)
-                throw new HzDException($"Could not read {StreamSize} bytes from image, only {readBytes} bytes read.");
-
             if (HasStreamableData)
             {
+                byte[] imageData = new byte[StreamSize];
+                int readBytes = file.Read(imageData, 0, (int)StreamSize);
+                if (readBytes != StreamSize)
+                    throw new HzDException($"Could not read {StreamSize} bytes from image, only {readBytes} bytes read.");
+
                 core.UpdateImage(this, imageData);
             }
+            else
+            {
+                byte[] imageData = new byte[EmbeddedSize];
+                int readBytes = file.Read(imageData, 0, (int)EmbeddedSize);
+                if (readBytes != EmbeddedSize)
+                    throw new HzDException($"Could not read {EmbeddedSize} bytes from image, only {readBytes} bytes read.");
 
-            // todo: update thumbnail in core file?
+                EmbeddedData = imageData;
+
+                core.WriteCoreData(EmbeddedPosition, imageData);
+            }
 
         }
     }

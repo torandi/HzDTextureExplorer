@@ -93,6 +93,14 @@ namespace HzdTextureExplorer
             file.Close();
         }
 
+        public void WriteCoreData(UInt64 offset, byte[] data)
+        {
+            FileStream file = File.OpenWrite(m_file);
+            BinaryWriter writer = new BinaryWriter(file);
+            file.Position = (long)offset;
+            writer.Write(data);
+            file.Close();
+        }
 
         public void ReadImage(ImageData image, BinaryWriter writer, bool allowFail = false)
         {
@@ -276,7 +284,7 @@ namespace HzdTextureExplorer
                     ddsFormat.ABitMask = 0;
                     break;
                 default:
-                    throw new HzDException($"Only BC1, BC3, BC5U, BC6 and BC7 support right now. Tried to write {format.Format.ToString()}");
+                    throw new HzDException($"Only BC1, BC3, BC5U, BC6 and BC7 supported right now. Tried to write {format.Format.ToString()}");
             }
 
             writer.Write(ddsFormat.Size);
