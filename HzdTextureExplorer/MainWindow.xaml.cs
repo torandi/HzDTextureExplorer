@@ -233,7 +233,8 @@ namespace HzdTextureExplorer
                 {
                     Images.Items.Add(tex);
                 }
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 MessageBox.Show($"An error occured while loading: {e.Message}");
             }
@@ -259,7 +260,15 @@ namespace HzdTextureExplorer
             AddInfo("Height", data.Height);
             AddInfo("Format", data.Format.ToString());
 
-            Preview.Source = tex.Image.Bitmap;
+            try
+            {
+                Preview.Source = tex.Image.Bitmap;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occured while loading: {ex.Message}");
+            }
+
         }
     }
 }

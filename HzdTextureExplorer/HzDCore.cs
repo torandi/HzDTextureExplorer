@@ -86,11 +86,28 @@ namespace HzdTextureExplorer
         }
 
 
-        public void ReadImage(ImageData image, BinaryWriter writer)
+        public void ReadImage(ImageData image, BinaryWriter writer, bool allowFail = false)
         {
-            Helper.WriteDdsHeader(writer, image.Width, image.Height, image.Format);
+            HzDException exception = null;
+            try
+            {
+                Helper.WriteDdsHeader(writer, image.Width, image.Height, image.Format);
+            }
+            catch(HzDException ex)
+            {
+                if (allowFail)
+                {
+                    exception = new HzDException($"{ex.Message}: File exported as raw instead.");
+                }
+                else
+                {
+                    throw;
+                }
+            }
             writer.Write(ReadStreamData(image.StreamStart, image.StreamEnd));
             writer.Flush();
+            if (exception != null)
+                throw exception;
         }
 
         public Stream OpenImage(ImageData image)
@@ -190,6 +207,26 @@ namespace HzdTextureExplorer
             // pixelformat:
             switch (format.Format)
             {
+                case ImageFormat.Formats.BC1:
+                    ddsFormat.Size = 32;
+                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
+                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.D3DFMT_DXT1;
+                    ddsFormat.RGBBitCount = 0;
+                    ddsFormat.RBitMask = 0;
+                    ddsFormat.GBitMask = 0;
+                    ddsFormat.BBitMask = 0;
+                    ddsFormat.ABitMask = 0;
+                    break;
+                case ImageFormat.Formats.BC3:
+                    ddsFormat.Size = 32;
+                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
+                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.D3DFMT_DXT3;
+                    ddsFormat.RGBBitCount = 0;
+                    ddsFormat.RBitMask = 0;
+                    ddsFormat.GBitMask = 0;
+                    ddsFormat.BBitMask = 0;
+                    ddsFormat.ABitMask = 0;
+                    break;
                 case ImageFormat.Formats.BC5U:
                     ddsFormat.Size = 32;
                     ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
@@ -223,7 +260,7 @@ namespace HzdTextureExplorer
                     ddsFormat.ABitMask = 0;
                     break;
                 default:
-                    throw new HzDException($"Only BC5U, BC6 and BC7 support right now. Tried to write {format.Format.ToString()}");
+                    throw new HzDException($"Only BC1, BC3, BC5U, BC6 and BC7 support right now. Tried to write {format.Format.ToString()}");
             }
 
             writer.Write(ddsFormat.Size);
@@ -538,16 +575,21 @@ namespace HzdTextureExplorer
 
             m_name = Helper.ReadString(reader);
             m_data = new ImageData(stream, reader, RemainingSize(stream));
-
-            // Preload texture
-            m_ddsImage = new DDSImage(Core.OpenImage(ImageData));
         }
 
         public void WriteDds(string fileName)
         {
             FileStream file = File.OpenWrite(fileName);
             BinaryWriter writer = new BinaryWriter(file);
-            Core.ReadImage(ImageData, writer);
+            try
+            {
+                Core.ReadImage(ImageData, writer, true);
+            }
+            catch
+            {
+                file.Close();
+                throw;
+            }
             file.Close();
         }
 
@@ -575,8 +617,21 @@ namespace HzdTextureExplorer
             if (header.PixelFormat.PixelFormatFlags != Pfim.DdsPixelFormatFlags.Fourcc)
                 throw new HzDException("PixelFormat missing FourcCC flag");
 
-
-            if (ImageData.Format.Format == ImageFormat.Formats.BC5U)
+            if (ImageData.Format.Format == ImageFormat.Formats.BC1)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.D3DFMT_DXT1)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC1");
+                }
+            }
+            else if (ImageData.Format.Format == ImageFormat.Formats.BC3)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.D3DFMT_DXT3)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC3");
+                }
+            }
+            else if (ImageData.Format.Format == ImageFormat.Formats.BC5U)
             {
                 if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.ATI2)
                 {
