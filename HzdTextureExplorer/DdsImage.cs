@@ -2,6 +2,7 @@
 using System.IO;
 using System.Windows.Media.Imaging;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace HzdTextureExplorer
@@ -74,7 +75,15 @@ namespace HzdTextureExplorer
                 throw new Exception("Unsupported pixel format (" + m_image.Format + ")");
 
             m_stream = new MemoryStream();
-            m_unpacked.SaveAsPng(m_stream);
+
+            var encoder = new PngEncoder
+            {
+                ColorType = PngColorType.Rgb,
+                BitDepth = PngBitDepth.Bit8,
+                TransparentColorMode = PngTransparentColorMode.Preserve
+            };
+
+            m_unpacked.SaveAsPng(m_stream, encoder);
 
             m_bitmap = new BitmapImage();
             m_bitmap.BeginInit();
