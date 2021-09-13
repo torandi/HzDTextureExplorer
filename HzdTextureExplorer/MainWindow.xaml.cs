@@ -79,13 +79,13 @@ namespace HzdTextureExplorer
 
                 if(dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    UpdateTexture(tex, dialog.FileName);
-                    MessageBox.Show($"{tex.Name} updated from {dialog.FileName}.");
+                    if (UpdateTexture(tex, dialog.FileName))
+                        MessageBox.Show($"{tex.Name} updated from {dialog.FileName}.");
                 }
             }
         }
 
-        private void UpdateTexture(Texture tex, string file)
+        private bool UpdateTexture(Texture tex, string file)
         {
             try
             {
@@ -94,10 +94,12 @@ namespace HzdTextureExplorer
                 {
                     Preview.Source = tex.Image.Bitmap; // update preview
                 }
+                return true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"An error occured while updating texture {tex.Name}: {ex.Message}");
+                return false;
             }
 
         }
