@@ -121,6 +121,11 @@ namespace HzdTextureExplorer
                 throw new HzDException($"Dimensions of imported dds file don't match. Must be {Width}x{Height}, but was {header.Width}x{header.Height}");
             }
 
+            if(header.MipMapCount < MipMaps)
+            {
+                throw new HzDException($"Imported dds has too few mipsmaps, needs at least {MipMaps}. (had only {header.MipMapCount}");
+            }
+
             if (header.PixelFormat.Size != 32)
                 throw new HzDException($"Invalid PixelFormat in dds. Expected size to be 32, but was {header.PixelFormat.Size}");
 
