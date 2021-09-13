@@ -107,7 +107,7 @@ namespace HzdTextureExplorer
             HzDException exception = null;
             try
             {
-                Helper.WriteDdsHeader(writer, image.Width, image.Height, image.Format);
+                Helper.WriteDdsHeader(writer, image.Width, image.Height, image.MipMaps, image.Format);
             }
             catch(HzDException ex)
             {
@@ -204,24 +204,25 @@ namespace HzdTextureExplorer
             return new string(chars);
         }
 
-        public static void WriteDdsHeader(BinaryWriter writer, UInt32 width, UInt32 height, ImageFormat format)
+        public static void WriteDdsHeader(BinaryWriter writer, UInt32 width, UInt32 height, uint mipmapCount, ImageFormat format)
         {
             const UInt32 DDSD_CAPS = 0x1;
             const UInt32 DDSD_HEIGHT = 0x2;
             const UInt32 DDSD_WIDTH = 0x4;
             const UInt32 DDSD_PIXELFORMAT = 0x1000;
+            const UInt32 DDSD_MIPMAPCOUNT = 0x20000;
             const UInt32 dummy = 0;
 
             byte[] magic = new byte[]{ (byte)'D', (byte)'D', (byte)'S', (byte)' ' };
             writer.Write(magic);
             const UInt32 HeaderSize = 124;
             writer.Write(HeaderSize);
-            writer.Write(DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT);
+            writer.Write(DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_MIPMAPCOUNT);
             writer.Write(height);
             writer.Write(width);
             writer.Write(dummy); // pitch
             writer.Write(dummy); // depth
-            writer.Write((UInt32)1); // mipmap count
+            writer.Write((UInt32)mipmapCount);
             for (uint i = 0; i < 11; ++i)
                 writer.Write(dummy); // reserved
 

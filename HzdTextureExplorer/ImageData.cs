@@ -12,7 +12,7 @@ namespace HzdTextureExplorer
         public ImageSize Size;
         public ushort Unknown2;
 
-        public uint UnknownStreamParam;
+        public uint MipMaps;
 
         public byte[] Magic;
 
@@ -80,7 +80,7 @@ namespace HzdTextureExplorer
 
             if(StreamSize > 0)
             {
-                UnknownStreamParam = reader.ReadUInt32();
+                MipMaps = reader.ReadUInt32();
                 uint cacheSize = reader.ReadUInt32();
                 char[] cacheString = reader.ReadChars((int)cacheSize);
                 CacheString = new string(cacheString);
@@ -175,7 +175,6 @@ namespace HzdTextureExplorer
             {
                 throw new HzDException($"Unimplemented format in core file texture: {Format.Format.ToString()}");
             }
-
 
             if (HasStreamableData)
             {

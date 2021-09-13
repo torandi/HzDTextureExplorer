@@ -33,7 +33,7 @@ namespace HzdTextureExplorer
             get
             {
                 if (m_ddsImage == null)
-                    m_ddsImage = new DDSImage(Core.OpenImage(ImageData));
+                    CacheDds();
 
                 return m_ddsImage;
             }
@@ -58,6 +58,11 @@ namespace HzdTextureExplorer
             result.ReadInternal(stream, reader);
 
             return result;
+        }
+
+        private void CacheDds()
+        {
+            m_ddsImage = new DDSImage(Core.OpenImage(ImageData));
         }
         
         protected override void ReadInternal(FileStream stream, BinaryReader reader)
@@ -87,6 +92,7 @@ namespace HzdTextureExplorer
         public virtual void UpdateImageData(string fileName)
         {
             ImageData.UpdateFromFile(fileName, Core);
+            CacheDds();
         }
     }
 }
