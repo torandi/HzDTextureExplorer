@@ -104,7 +104,7 @@ namespace HzdTextureExplorer
                     throw;
                 }
             }
-            writer.Write(ReadStreamData(image.StreamStart, image.StreamEnd));
+            writer.Write(ReadStreamData(image.StreamStart, image.StreamLength));
             writer.Flush();
             if (exception != null)
                 throw exception;
@@ -124,7 +124,7 @@ namespace HzdTextureExplorer
 
         public void UpdateImage(ImageData image, byte[] newData)
         {
-            if (image.StreamEnd != (ulong)newData.Length)
+            if (image.StreamLength != (ulong)newData.Length)
                 throw new HzDException($"New data is not the right size!");
             WriteStreamData(image.StreamStart, newData);
         }
@@ -399,13 +399,43 @@ namespace HzdTextureExplorer
         }
     }
 
+    public struct ImageSize
+    {
+        public uint Width;
+        public uint Height;
+
+        // Populate when read as 14 bits
+        public uint WidthCrop;
+        public uint HeightCrop;
+
+        public static ImageSize ReadUint(BinaryReader reader)
+        {
+            ImageSize s = new ImageSize();
+            s.Width = reader.ReadUInt32();
+            s.Height = reader.ReadUInt32();
+            s.WidthCrop = 0;
+            s.HeightCrop = 0;
+            return s;
+        }
+
+        public static ImageSize Read14bits(BinaryReader reader)
+        {
+            ImageSize s = new ImageSize();
+            ushort raw = reader.ReadUInt16();
+            s.Width = (ushort)(raw & 0x3fff); // 14 bits
+            s.WidthCrop = (byte)((raw >> 14) & 0x3); // 2 bits
+            raw = reader.ReadUInt16();
+            s.Height = (ushort)(raw & 0x3fff); // 14 bits
+            s.HeightCrop = (byte)((raw >> 14) & 0x3); // 2 bits
+
+            return s;
+        }
+    }
+
     public class ImageData
     {
         public ushort Unknown1;
-        public ushort Width;
-        public byte WidthCrop;
-        public ushort Height;
-        public byte HeightCrop;
+        public ImageSize Size;
         public ushort Unknown2;
 
         public uint UnknownStreamParam;
@@ -422,9 +452,25 @@ namespace HzdTextureExplorer
         public byte[] ThumbnailData;
 
         public UInt64 StreamStart;
-        public UInt64 StreamEnd; // Length, same as StreamSize ?
+        public UInt64 StreamLength;
 
         public String CacheString;
+
+        public uint Width
+        {
+            get
+            {
+                return Size.Width;
+            }
+        }
+        
+        public uint Height
+        {
+            get
+            {
+                return Size.Height;
+            }
+        }
 
 
         public ImageData(FileStream stream, BinaryReader reader, long size)
@@ -434,12 +480,7 @@ namespace HzdTextureExplorer
                 return;
 
             Unknown1 = reader.ReadUInt16();
-            ushort raw = reader.ReadUInt16();
-            Width = (ushort)(raw & 0x3fff); // 14 bits
-            WidthCrop = (byte)((raw >> 14) & 0x3); // 2 bits
-            raw = reader.ReadUInt16();
-            Height = (ushort)(raw & 0x3fff); // 14 bits
-            HeightCrop = (byte)((raw >> 14) & 0x3); // 2 bits
+            Size = ImageSize.Read14bits(reader);
 
             Unknown2 = reader.ReadUInt16();
             Format = new ImageFormat(reader);
@@ -462,7 +503,7 @@ namespace HzdTextureExplorer
                 char[] cacheString = reader.ReadChars((int)cacheSize);
                 CacheString = new string(cacheString);
                 StreamStart = reader.ReadUInt64();
-                StreamEnd = reader.ReadUInt64(); // Length?
+                StreamLength = reader.ReadUInt64();
             }
             else
             {
@@ -502,6 +543,13 @@ namespace HzdTextureExplorer
 
     public class UITexture : BaseItem
     {
+
+        private String[] m_name = null;
+        private ImageData[] m_data = null;
+
+        private DDSImage[] m_ddsImage = null;
+
+        private ImageSize[] m_sizes = new HzdTextureExplorer.ImageSize[2];
 
         public const UInt64 TypeHash = 0x9C78E9FDC6042A60;
         public static UITexture Read(HzDCore core, FileStream stream, BinaryReader reader)
