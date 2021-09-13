@@ -30,6 +30,14 @@ namespace HzdTextureExplorer
                 return m_textures;
             }
         }
+        public List<UITexture> UITextures
+        {
+            get
+            {
+                return m_uiTextures;
+            }
+        }
+
 
         public HzDCore(string path)
         {
@@ -104,7 +112,15 @@ namespace HzdTextureExplorer
                     throw;
                 }
             }
-            writer.Write(ReadStreamData(image.StreamStart, image.StreamLength));
+            if (image.HasStreamableData)
+            {
+                writer.Write(ReadStreamData(image.StreamStart, image.StreamLength));
+            }
+            else
+            {
+                writer.Write(image.EmbeddedData);
+            }
+
             writer.Flush();
             if (exception != null)
                 throw exception;
@@ -138,7 +154,7 @@ namespace HzdTextureExplorer
 
         protected long BasePosition;
 
-        protected HzDCore Core;
+        public HzDCore Core;
 
         protected BaseItem(HzDCore core)
         {
@@ -296,6 +312,13 @@ namespace HzdTextureExplorer
                 writer.Write((uint)8); // alpha mode
             }
         }
+
+        public static void AddImageInfo(List<InfoItem> target, ImageData image)
+        {
+            target.Add(new InfoItem("Width", image.Width.ToString()));
+            target.Add(new InfoItem("Height", image.Height.ToString()));
+            target.Add(new InfoItem("Format", image.Format.ToString()));
+        }
     }
 
     public struct ImageFormat
@@ -445,11 +468,11 @@ namespace HzdTextureExplorer
         public byte[] Hash; // maybe?
 
         public uint StreamSize;
-        public uint ThumbnailSize;
+        public uint EmbeddedSize;
 
         public readonly ImageFormat Format;
 
-        public byte[] ThumbnailData;
+        public byte[] EmbeddedData;
 
         public UInt64 StreamStart;
         public UInt64 StreamLength;
@@ -469,6 +492,14 @@ namespace HzdTextureExplorer
             get
             {
                 return Size.Height;
+            }
+        }
+
+        public bool HasStreamableData
+        {
+            get
+            {
+                return StreamSize > 0;
             }
         }
 
@@ -493,7 +524,7 @@ namespace HzdTextureExplorer
 
             uint chunkSize = reader.ReadUInt32();
 
-            ThumbnailSize = reader.ReadUInt32();
+            EmbeddedSize = reader.ReadUInt32();
             StreamSize = reader.ReadUInt32();
 
             if(StreamSize > 0)
@@ -509,17 +540,106 @@ namespace HzdTextureExplorer
             {
                 const int ImageParamsSize = 8; // 2 uints Size with and without stream
                 // padding:
-                reader.ReadBytes((int)(chunkSize - (ImageParamsSize + ThumbnailSize)));
+                reader.ReadBytes((int)(chunkSize - (ImageParamsSize + EmbeddedSize)));
             }
 
-            ThumbnailData = reader.ReadBytes((int)ThumbnailSize);
+            EmbeddedData = reader.ReadBytes((int)EmbeddedSize);
 
             long currentPos = start + size;
             if (stream.Position != currentPos)
                 throw new HzDException("Read incorrect size in Texture");
         }
-    }
 
+        public void UpdateFromFile(string filename, HzDCore core)
+        {
+            FileStream file = File.OpenRead(filename);
+
+            // Read header
+            Pfim.DdsHeader header = new Pfim.DdsHeader(file);
+            Pfim.DdsHeaderDxt10 dxt10Header = null;
+            if(header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10)
+            {
+                // Also read dxt10 header
+                dxt10Header = new Pfim.DdsHeaderDxt10(file);
+            }
+
+            if(header.Width != Width || header.Height != Height)
+            {
+                throw new HzDException($"Dimensions of imported dds file don't match. Must be {Width}x{Height}, but was {header.Width}x{header.Height}");
+            }
+
+            if (header.PixelFormat.Size != 32)
+                throw new HzDException($"Invalid PixelFormat in dds. Expected size to be 32, but was {header.PixelFormat.Size}");
+
+            if (header.PixelFormat.PixelFormatFlags != Pfim.DdsPixelFormatFlags.Fourcc)
+                throw new HzDException("PixelFormat missing FourcCC flag");
+
+            if (Format.Format == ImageFormat.Formats.BC1)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.D3DFMT_DXT1)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC1");
+                }
+            }
+            else if (Format.Format == ImageFormat.Formats.BC3)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.D3DFMT_DXT3)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC3");
+                }
+            }
+            else if (Format.Format == ImageFormat.Formats.BC5U)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.ATI2)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC5U");
+                }
+            }
+            else if (Format.Format == ImageFormat.Formats.BC6U)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC6H_UF16)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC6U");
+                }
+
+            }
+            else if (Format.Format == ImageFormat.Formats.BC6S)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC6H_SF16)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC6S");
+                }
+
+            }
+            else if (Format.Format == ImageFormat.Formats.BC7)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC7_UNORM)
+                {
+                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC7");
+                }
+            }
+            else
+            {
+                throw new HzDException($"Unimplemented format in core file texture: {Format.Format.ToString()}");
+            }
+
+
+            // todo: handle local image only!
+            byte[] imageData = new byte[StreamSize];
+            int readBytes = file.Read(imageData, 0, (int)StreamSize);
+            if (readBytes != StreamSize)
+                throw new HzDException($"Could not read {StreamSize} bytes from image, only {readBytes} bytes read.");
+
+            if (HasStreamableData)
+            {
+                core.UpdateImage(this, imageData);
+            }
+
+            // todo: update thumbnail in core file?
+
+        }
+    }
+    
     public class TextureSet : BaseItem
     {
         public const UInt64 TypeHash = 0xE02735CED4F1CDF;
@@ -543,6 +663,8 @@ namespace HzdTextureExplorer
 
     public class UITexture : BaseItem
     {
+        public const UInt64 TypeHash = 0x9C78E9FDC6042A60;
+
         private string[] m_name = new string[2];
         private ImageData[] m_data = new ImageData[2];
 
@@ -552,7 +674,36 @@ namespace HzdTextureExplorer
 
         private ImageSize m_initialSize;
 
-        public const UInt64 TypeHash = 0x9C78E9FDC6042A60;
+        public string[] Names { get => m_name; }
+        public ImageData[] Datas { get => m_data; }
+        public DDSImage[] Images {
+            get
+            {
+                if (m_ddsImage[0] == null)
+                {
+                    m_ddsImage[0] = new DDSImage(Core.OpenImage(m_data[0]));
+                }
+
+                if (m_ddsImage[1] == null)
+                {
+                    m_ddsImage[1] = new DDSImage(Core.OpenImage(m_data[1]));
+                }
+
+                return m_ddsImage;
+            }
+        }
+
+        public IList<ITexture> TextureItems
+        {
+            get
+            {
+                List<ITexture> textures = new List<ITexture>();
+                textures.Add(new UITextureWrapper(this, 0));
+                textures.Add(new UITextureWrapper(this, 1));
+                return textures;
+            }
+        }
+
         public static UITexture Read(HzDCore core, FileStream stream, BinaryReader reader)
         {
             UITexture result = new UITexture(core);
@@ -561,8 +712,16 @@ namespace HzdTextureExplorer
         }
         protected override void ReadInternal(FileStream stream, BinaryReader reader)
         {
+            base.ReadInternal(stream, reader);
+
             m_name[0] = Helper.ReadString(reader);
             m_name[1] = Helper.ReadString(reader);
+
+            if(m_name[0] == m_name[1])
+            {
+                m_name[0] += "_0";
+                m_name[1] += "_1";
+            }
 
             m_initialSize = ImageSize.ReadUint(reader);
 
@@ -577,9 +736,71 @@ namespace HzdTextureExplorer
             :base(core)
         { }
 
+        internal void WriteDds(uint index, string path)
+        {
+            FileStream file = File.OpenWrite(path);
+            BinaryWriter writer = new BinaryWriter(file);
+            try
+            {
+                Core.ReadImage(m_data[index], writer, true);
+            }
+            catch
+            {
+                file.Close();
+                throw;
+            }
+            file.Close();
+        }
     }
 
-    public class Texture : BaseItem
+    public class UITextureWrapper : ITexture
+    {
+        UITexture m_base;
+        uint m_index;
+
+        public UITextureWrapper(UITexture texture, uint index)
+        {
+            m_base = texture;
+            m_index = index;
+        }
+
+        public string Name
+        {
+            get
+            {
+                return $"{m_base.Names[m_index]}";
+            }
+        }
+        public IList<InfoItem> Info
+        {
+            get
+            {
+                List<InfoItem> items = new List<InfoItem>();
+                Helper.AddImageInfo(items, m_base.Datas[m_index]);
+                return items;
+            }
+        }
+
+        public DDSImage Image
+        {
+            get
+            {
+
+                return m_base.Images[m_index];
+            }
+        }
+
+        public virtual void WriteDds(string path)
+        {
+            m_base.WriteDds(m_index, path);
+        }
+        public virtual void UpdateImageData(string fileName)
+        {
+            m_base.Datas[m_index].UpdateFromFile(fileName, m_base.Core);
+        }
+    }
+
+    public class Texture : BaseItem, ITexture
     {
         public const UInt64 TypeHash = 0xF2E1AFB7052B3866;
         private String m_name = null;
@@ -587,7 +808,7 @@ namespace HzdTextureExplorer
 
         private DDSImage m_ddsImage = null;
 
-        public String Name
+        public String Name 
         {
             get
             {
@@ -613,6 +834,15 @@ namespace HzdTextureExplorer
                 return m_ddsImage;
             }
         }
+        public IList<InfoItem> Info
+        {
+            get
+            {
+                List<InfoItem> items = new List<InfoItem>();
+                Helper.AddImageInfo(items, m_data);
+                return items;
+            }
+        }
 
         public Texture(HzDCore core)
             : base(core)
@@ -634,9 +864,9 @@ namespace HzdTextureExplorer
             m_data = new ImageData(stream, reader, RemainingSize(stream));
         }
 
-        public void WriteDds(string fileName)
+        public virtual void WriteDds(string path)
         {
-            FileStream file = File.OpenWrite(fileName);
+            FileStream file = File.OpenWrite(path);
             BinaryWriter writer = new BinaryWriter(file);
             try
             {
@@ -650,90 +880,9 @@ namespace HzdTextureExplorer
             file.Close();
         }
 
-        public void UpdateImageData(string fileName)
+        public virtual void UpdateImageData(string fileName)
         {
-            FileStream file = File.OpenRead(fileName);
-
-            // Read header
-            Pfim.DdsHeader header = new Pfim.DdsHeader(file);
-            Pfim.DdsHeaderDxt10 dxt10Header = null;
-            if(header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10)
-            {
-                // Also read dxt10 header
-                dxt10Header = new Pfim.DdsHeaderDxt10(file);
-            }
-
-            if(header.Width != ImageData.Width || header.Height != ImageData.Height)
-            {
-                throw new HzDException($"Dimensions of imported dds file don't match. Must be {ImageData.Width}x{ImageData.Height}, but was {header.Width}x{header.Height}");
-            }
-
-            if (header.PixelFormat.Size != 32)
-                throw new HzDException($"Invalid PixelFormat in dds. Expected size to be 32, but was {header.PixelFormat.Size}");
-
-            if (header.PixelFormat.PixelFormatFlags != Pfim.DdsPixelFormatFlags.Fourcc)
-                throw new HzDException("PixelFormat missing FourcCC flag");
-
-            if (ImageData.Format.Format == ImageFormat.Formats.BC1)
-            {
-                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.D3DFMT_DXT1)
-                {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC1");
-                }
-            }
-            else if (ImageData.Format.Format == ImageFormat.Formats.BC3)
-            {
-                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.D3DFMT_DXT3)
-                {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC3");
-                }
-            }
-            else if (ImageData.Format.Format == ImageFormat.Formats.BC5U)
-            {
-                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.ATI2)
-                {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC5U");
-                }
-            }
-            else if (ImageData.Format.Format == ImageFormat.Formats.BC6U)
-            {
-                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC6H_UF16)
-                {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC6U");
-                }
-
-            }
-            else if (ImageData.Format.Format == ImageFormat.Formats.BC6S)
-            {
-                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC6H_SF16)
-                {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC6S");
-                }
-
-            }
-            else if (ImageData.Format.Format == ImageFormat.Formats.BC7)
-            {
-                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC7_UNORM)
-                {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC7");
-                }
-            }
-            else
-            {
-                throw new HzDException($"Unimplemented format in core file texture: {ImageData.Format.Format.ToString()}");
-            }
-
-            byte[] imageData = new byte[ImageData.StreamSize];
-            int readBytes = file.Read(imageData, 0, (int)ImageData.StreamSize);
-            if (readBytes != ImageData.StreamSize)
-                throw new HzDException($"Could not read {ImageData.StreamSize} bytes from image, only {readBytes} bytes read.");
-
-            Core.UpdateImage(ImageData, imageData);
-
-            // refresh cached image
-            m_ddsImage = new DDSImage(Core.OpenImage(ImageData));
-
-            // todo: update thumbnail in core file?
+            ImageData.UpdateFromFile(fileName, Core);
         }
     }
 

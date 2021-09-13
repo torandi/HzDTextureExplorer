@@ -63,7 +63,7 @@ namespace HzdTextureExplorer
         }
         private void ToolBar_UpdateSingle(object sender, RoutedEventArgs e)
         {
-            Texture tex = Images.SelectedItem as Texture;
+            ITexture tex = Images.SelectedItem as ITexture;
             if (tex == null)
             {
                 MessageBox.Show("No Texture selected.");
@@ -85,7 +85,7 @@ namespace HzdTextureExplorer
             }
         }
 
-        private bool UpdateTexture(Texture tex, string file)
+        private bool UpdateTexture(ITexture tex, string file)
         {
             try
             {
@@ -103,7 +103,6 @@ namespace HzdTextureExplorer
             }
 
         }
-
 
         private void ToolBar_UpdateAll(object sender, RoutedEventArgs e)
         {
@@ -137,7 +136,7 @@ namespace HzdTextureExplorer
 
         private void ToolBar_ExportSingle(object sender, RoutedEventArgs e)
         {
-            Texture tex = Images.SelectedItem as Texture;
+            ITexture tex = Images.SelectedItem as ITexture;
             if (tex == null)
             {
                 MessageBox.Show("No Texture selected.");
@@ -214,16 +213,8 @@ namespace HzdTextureExplorer
                 return;
             }
 
-            string stream = path + ".stream";
-            if(!File.Exists(stream))
-            {
-                MessageBox.Show($"No .core.stream file found at {stream}. Both core and stream file is required.");
-                return;
-            }
-
             try
             {
-
                 m_core = new HzDCore(path);
 
                 Debug.WriteLine("Loaded {path}");
@@ -231,10 +222,19 @@ namespace HzdTextureExplorer
                 Images.Items.Clear();
                 Images.DisplayMemberPath = "Name";
 
-                foreach (Texture tex in m_core.Textures)
+                foreach (ITexture tex in m_core.Textures)
                 {
                     Images.Items.Add(tex);
                 }
+
+                foreach (UITexture uitex in m_core.UITextures)
+                {
+                    foreach (ITexture tex in uitex.TextureItems)
+                    {
+                        Images.Items.Add(tex);
+                    }
+                }
+
             }
             catch (Exception e)
             {
@@ -242,9 +242,9 @@ namespace HzdTextureExplorer
             }
         }
 
-        private void AddInfo(string title, object item)
+        private void AddInfo(InfoItem item)
         {
-            String str = $"{title}: {item.ToString()}";
+            String str = $"{item.Title}: {item.Value}";
             Info.Items.Add(str);
         }
 
@@ -255,12 +255,17 @@ namespace HzdTextureExplorer
             if (e.AddedItems.Count == 0)
                 return;
 
-            Texture tex = e.AddedItems[0] as Texture;
-            ImageData data = tex.ImageData;
+            ITexture tex = e.AddedItems[0] as ITexture;
 
-            AddInfo("Width", data.Width);
-            AddInfo("Height", data.Height);
-            AddInfo("Format", data.Format.ToString());
+            if (tex == null)
+                return;
+
+            IList<InfoItem> infos = tex.Info;
+
+            foreach (var info in infos)
+            {
+                AddInfo(info);
+            }
 
             try
             {
