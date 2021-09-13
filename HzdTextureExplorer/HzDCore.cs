@@ -543,13 +543,14 @@ namespace HzdTextureExplorer
 
     public class UITexture : BaseItem
     {
+        private string[] m_name = new string[2];
+        private ImageData[] m_data = new ImageData[2];
 
-        private String[] m_name = null;
-        private ImageData[] m_data = null;
+        private DDSImage[] m_ddsImage = new DDSImage[2];
 
-        private DDSImage[] m_ddsImage = null;
+        private uint[] m_size = new uint[2];
 
-        private ImageSize[] m_sizes = new HzdTextureExplorer.ImageSize[2];
+        private ImageSize m_initialSize;
 
         public const UInt64 TypeHash = 0x9C78E9FDC6042A60;
         public static UITexture Read(HzDCore core, FileStream stream, BinaryReader reader)
@@ -560,7 +561,16 @@ namespace HzdTextureExplorer
         }
         protected override void ReadInternal(FileStream stream, BinaryReader reader)
         {
-            base.Skip(reader);
+            m_name[0] = Helper.ReadString(reader);
+            m_name[1] = Helper.ReadString(reader);
+
+            m_initialSize = ImageSize.ReadUint(reader);
+
+            m_size[0] = reader.ReadUInt32();
+            m_size[1] = reader.ReadUInt32();
+
+            m_data[0] = new ImageData(stream, reader, m_size[0]);
+            m_data[1] = new ImageData(stream, reader, m_size[1]);
         }
 
         public UITexture(HzDCore core)
@@ -713,13 +723,10 @@ namespace HzdTextureExplorer
                 throw new HzDException($"Unimplemented format in core file texture: {ImageData.Format.Format.ToString()}");
             }
 
-            if (file.Position + ImageData.StreamSize != file.Length)
-                throw new HzDException($"File is not the right size. Expected to be able to read exactly {ImageData.StreamSize} bytes, but there are {file.Length - file.Position} bytes left in the file.");
-
             byte[] imageData = new byte[ImageData.StreamSize];
             int readBytes = file.Read(imageData, 0, (int)ImageData.StreamSize);
             if (readBytes != ImageData.StreamSize)
-                throw new HzDException($"Could not read the required number of bytes from file. It must be the exact same size as the original file.");
+                throw new HzDException($"Could not read {ImageData.StreamSize} bytes from image, only {readBytes} bytes read.");
 
             Core.UpdateImage(ImageData, imageData);
 
