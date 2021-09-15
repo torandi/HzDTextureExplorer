@@ -161,7 +161,7 @@ namespace HzdTextureExplorer
             using(var dialog = new System.Windows.Forms.SaveFileDialog())
             {
                 dialog.InitialDirectory = m_core?.Path;
-                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds|Targa (*.tga)|*.tga";
+                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds|Targa Image File (*.tga)|*.tga";
                 dialog.FilterIndex = 1;
                 dialog.RestoreDirectory = true;
                 dialog.DefaultExt = "dds";
@@ -193,7 +193,7 @@ namespace HzdTextureExplorer
             using(var dialog = new System.Windows.Forms.SaveFileDialog())
             {
                 dialog.InitialDirectory = m_core?.Path;
-                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds|Targa (*.tga)|*.tga";
+                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds|Targa Image File (*.tga)|*.tga";
                 dialog.FilterIndex = 1;
                 dialog.RestoreDirectory = true;
                 dialog.DefaultExt = "dds";
