@@ -8,6 +8,7 @@
  
  # Features
  * Open HzD core files containing textures and preview them.
+     * You can also drop a core file on the program to open it
  * Export Textures from the file to dds on disk
  * Replace the textures in the .core.stream file with your own modded dds file.
  * Support for viewing and exporting UITextures
