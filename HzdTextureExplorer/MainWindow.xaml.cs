@@ -79,8 +79,7 @@ namespace HzdTextureExplorer
 
                 if(dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    if (UpdateTexture(tex, dialog.FileName))
-                        MessageBox.Show($"{tex.Name} updated from {dialog.FileName}.");
+                    UpdateTexture(tex, dialog.FileName);
                 }
             }
         }
@@ -128,26 +127,25 @@ namespace HzdTextureExplorer
                     Texture sel = Images.SelectedItem as Texture;
                     if(sel != null)
                         Preview.Source = sel.Image.Bitmap;
-                    MessageBox.Show($"{m_core.Textures.Count} textures updated from {dialog.SelectedPath}.");
                 }
             }
         }
 
-        private string ExportTexture(string path, ITexture tex)
+        private void ExportTexture(string file, ITexture tex)
         {
-            bool isDds = ExportFormat.SelectedIndex == 0;
+            string ext = Path.GetExtension(file);
 
-            if (isDds)
+            if (ext == ".dds")
             {
-                string file = $"{path}/{tex.Name}.dds";
                 tex.WriteDds(file);
-                return file;
+            }
+            else if(ext == ".tga")
+            {
+                tex.WriteTga(file);
             }
             else
             {
-                string file = $"{path}/{tex.Name}.tga";
-                tex.WriteTga(file);
-                return file;
+                throw new HzDException($"Unknown file extension {ext}");
             }
         }
 
@@ -160,16 +158,28 @@ namespace HzdTextureExplorer
                 return;
             }
 
-            try
+            using(var dialog = new System.Windows.Forms.SaveFileDialog())
             {
-                string path = Path.GetDirectoryName(m_core.Path);
-                string file = ExportTexture(path, tex);
-                MessageBox.Show($"Exported to {file}");
+                dialog.InitialDirectory = m_core?.Path;
+                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds|Targa (*.tga)|*.tga";
+                dialog.FilterIndex = 1;
+                dialog.RestoreDirectory = true;
+                dialog.DefaultExt = "dds";
+                dialog.Title = $"Export {tex.Name}";
+                    
+                if(dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    try
+                    {
+                        ExportTexture(dialog.FileName, tex);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"An error occured while exporting: {ex.Message}");
+                    }
+                }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"An error occured while exporting: {ex.Message}");
-            }
+
         }
 
         private void ToolBar_ExportAll(object sender, RoutedEventArgs e)
@@ -180,19 +190,32 @@ namespace HzdTextureExplorer
                 return;
             }
 
-            try
+            using(var dialog = new System.Windows.Forms.SaveFileDialog())
             {
-                string path = Path.GetDirectoryName(m_core.Path);
-                foreach (Texture tex in m_core.Textures)
+                dialog.InitialDirectory = m_core?.Path;
+                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds|Targa (*.tga)|*.tga";
+                dialog.FilterIndex = 1;
+                dialog.RestoreDirectory = true;
+                dialog.DefaultExt = "dds";
+                dialog.Title = $"Export all textures";
+                    
+                if(dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    ExportTexture(path, tex);
+                    try
+                    {
+                        string path = Path.GetDirectoryName(dialog.FileName);
+                        string baseName = Path.GetFileNameWithoutExtension(dialog.FileName);
+                        string ext = Path.GetExtension(dialog.FileName);
+                        foreach (Texture tex in m_core.Textures)
+                        {
+                            ExportTexture($"{path}\\{baseName}_{tex.Name}{ext}", tex);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"An error occured while exporting: {ex.Message}");
+                    }
                 }
-
-                MessageBox.Show($"Exported {m_core.Textures.Count} files to {path}");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"An error occured while exporting: {ex.Message}");
             }
         }
 

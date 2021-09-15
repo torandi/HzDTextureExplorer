@@ -14,10 +14,6 @@
 				<Separator/>
 				<Button Click="ToolBar_ExportSingle" Content="Export Selected" ToolTip="Export selected image as dds"/>
 				<Button Click="ToolBar_ExportAll" Content="Export All" ToolTip="Export all images as dds"/>
-				<ComboBox Name="ExportFormat">
-					<ComboBoxItem Content="As Dds" IsSelected="true"/>
-					<ComboBoxItem Content="As Tga"/>
-				</ComboBox>
 				<Separator/>
 				<Button Click="ToolBar_UpdateSingle" Content="Replace Selected" ToolTip="Replace selected image (modifies open file)"/>
 				<Button Click="ToolBar_UpdateAll" Content="Replace All" ToolTip="Replace all images (modifies open file)"/>
