@@ -9,13 +9,14 @@
  # Features
  * Open HzD core files containing textures and preview them.
      * You can also drop a core file on the program to open it
- * Export Textures from the file to dds on disk
- * Replace the textures in the .core.stream file with your own modded dds file.
- * Support for viewing and exporting UITextures
+ * Export textures to dds or tga
+ * Replace textures in the .core.stream file with your own modded dds file.
+ * Support for viewing and exporting UITextures (replacing not supported yet)
  
  # Usage
  * Open a .core file with *Open*. For everything but UITextures, you also need a .core.stream file in the same folder.
- * Use Export or Export All to export the select or all textures to the same folder as the .core file (as dds files).
+ * Use Export Selected to export the selected texture. Select between dds and tga format.
+ * Use Export All to export all textures. The filename provided in the dialog is used as a base.
  * Use Replace to replace the selected texture with a dds file from disk.
      * The new file must have the same resolution, format and at least the same number of mipmaps as the original file.
 	 * This updates the existing .core.stream file
