@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace HzdTextureExplorer
 {
@@ -33,5 +34,20 @@ namespace HzdTextureExplorer
 
         public abstract void WriteDds(string path);
         public abstract void UpdateImageData(string path);
+
+        public void WriteTga(string path)
+        {
+            FileStream file = File.OpenWrite(path);
+            try
+            {
+                Image.WriteTga(file);
+            }
+            catch
+            {
+                file.Close();
+                throw;
+            }
+            file.Close();
+        }
     }
 }

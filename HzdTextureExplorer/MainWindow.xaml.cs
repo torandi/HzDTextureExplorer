@@ -131,7 +131,24 @@ namespace HzdTextureExplorer
                     MessageBox.Show($"{m_core.Textures.Count} textures updated from {dialog.SelectedPath}.");
                 }
             }
+        }
 
+        private string ExportTexture(string path, ITexture tex)
+        {
+            bool isDds = ExportFormat.SelectedIndex == 0;
+
+            if (isDds)
+            {
+                string file = $"{path}/{tex.Name}.dds";
+                tex.WriteDds(file);
+                return file;
+            }
+            else
+            {
+                string file = $"{path}/{tex.Name}.tga";
+                tex.WriteTga(file);
+                return file;
+            }
         }
 
         private void ToolBar_ExportSingle(object sender, RoutedEventArgs e)
@@ -146,8 +163,7 @@ namespace HzdTextureExplorer
             try
             {
                 string path = Path.GetDirectoryName(m_core.Path);
-                string file = $"{path}/{tex.Name}.dds";
-                tex.WriteDds(file);
+                string file = ExportTexture(path, tex);
                 MessageBox.Show($"Exported to {file}");
             }
             catch (Exception ex)
@@ -169,8 +185,7 @@ namespace HzdTextureExplorer
                 string path = Path.GetDirectoryName(m_core.Path);
                 foreach (Texture tex in m_core.Textures)
                 {
-                    string file = $"{path}/{tex.Name}.dds";
-                    tex.WriteDds(file);
+                    ExportTexture(path, tex);
                 }
 
                 MessageBox.Show($"Exported {m_core.Textures.Count} files to {path}");

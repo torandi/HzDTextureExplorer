@@ -94,6 +94,11 @@ namespace HzdTextureExplorer
             m_bitmap.EndInit();
         }
 
+        public void WriteTga(Stream stream)
+        {
+            m_unpacked.SaveAsTga(stream);
+        }
+
         private void Unpack<T>()
             where T : unmanaged, IPixel<T>
         {
