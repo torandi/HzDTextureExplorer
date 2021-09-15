@@ -327,6 +327,7 @@ namespace HzdTextureExplorer
             target.Add(new InfoItem("Width", image.Width.ToString()));
             target.Add(new InfoItem("Height", image.Height.ToString()));
             target.Add(new InfoItem("Format", image.Format.ToString()));
+            target.Add(new InfoItem("Mips Maps", image.MipMaps.ToString()));
         }
     }
 
