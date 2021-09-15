@@ -181,29 +181,6 @@ namespace HzdTextureExplorer
             }
         }
 
-        private void Context_Export(object sender, RoutedEventArgs e)
-        {
-            Texture tex = e.Source as Texture;
-            if (tex == null)
-                return;
-            try
-            {
-                string path = Path.GetDirectoryName(m_core.Path);
-                string file = $"{path}\\{tex.Name}.dds";
-                tex.WriteDds(file);
-                MessageBox.Show($"Exported to {file}");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"An error occured while exporting: {ex.Message}");
-            }
-        }
-
-        private void Context_Update(object sender, RoutedEventArgs e)
-        {
-
-        }
-
         private void LoadCoreFile(String path)
         {
             string ext = Path.GetExtension(path);

@@ -14,6 +14,10 @@
 				<Separator/>
 				<Button Click="ToolBar_ExportSingle" Content="Export Selected" ToolTip="Export selected image as dds"/>
 				<Button Click="ToolBar_ExportAll" Content="Export All" ToolTip="Export all images as dds"/>
+				<ComboBox Name="ExportFormat">
+					<ComboBoxItem Name="dds" Content="As Dds" IsSelected="true"/>
+					<ComboBoxItem Name="tiff" Content="As Tiff"/>
+				</ComboBox>
 				<Separator/>
 				<Button Click="ToolBar_UpdateSingle" Content="Replace Selected" ToolTip="Replace selected image (modifies open file)"/>
 				<Button Click="ToolBar_UpdateAll" Content="Replace All" ToolTip="Replace all images (modifies open file)"/>
@@ -32,12 +36,6 @@
 			<ListBox Name="Images" Grid.Column="0" Grid.Row="0" SelectionChanged="Image_OnSelectionChanged">
 
 				<ListBoxItem Content="[no file loaded]" Name="InitialItem">
-				<ListBoxItem.ContextMenu>
-					<ContextMenu>
-						<MenuItem Header="Export" Click="Context_Export"/>
-						<MenuItem Header="Update from file" Click="Context_Update"/>
-					</ContextMenu>
-				</ListBoxItem.ContextMenu>
 				</ListBoxItem>
 			</ListBox>
 			<ListBox Name="Info" Grid.Column="0" Grid.Row="1">
