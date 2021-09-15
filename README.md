@@ -19,3 +19,7 @@
      * The new file must have the same resolution, format and at least the same number of mipmaps as the original file.
 	 * This updates the existing .core.stream file
  * Use Replace all to replace all textures with dds files with matching names.
+
+# Note on Photoshop
+* When loading the dds in photoshop, it's best to uncheck "load mipmaps", and check "Load alpha as channel ...". This ensures the texture is visible.
+* When exporting, make sure to match the format (see info window of tool), and remember to check "generate mipmaps"
