@@ -6,11 +6,23 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <StartupObject>HzdTextureExplorer.App</StartupObject>
+    <ApplicationIcon>hzd_texture_icon.ico</ApplicationIcon>
+    <Win32Resource />
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\hzd_texture_icon_256.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Pfim" Version="0.10.1" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\hzd_texture_icon_256.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
 </Project>

@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:HzdTextureExplorer"
         mc:Ignorable="d"
-        Title="HzD Texture Explorer" Height="800" Width="1280">
+        Title="HzD Texture Explorer" Height="800" Width="1280"
+		Icon="Resources/hzd_texture_icon_256.png">
 	<DockPanel>
 		<ToolBarTray DockPanel.Dock="Top">
 			<ToolBar>
