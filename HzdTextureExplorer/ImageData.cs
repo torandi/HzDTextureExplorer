@@ -148,7 +148,7 @@ namespace HzdTextureExplorer
             }
             else if (Format.Format == ImageFormat.Formats.BC5U)
             {
-                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.ATI2)
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC5_UNORM)
                 {
                     throw new HzDException($"Invalid PixelFormat in dds. Expected BC5U");
                 }
