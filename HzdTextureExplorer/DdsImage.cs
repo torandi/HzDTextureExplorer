@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows.Media.Imaging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Tga;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace HzdTextureExplorer
@@ -96,7 +97,12 @@ namespace HzdTextureExplorer
 
         public void WriteTga(Stream stream)
         {
-            m_unpacked.SaveAsTga(stream);
+            var encoder = new TgaEncoder
+            {
+                BitsPerPixel = TgaBitsPerPixel.Pixel32,
+            };
+
+            m_unpacked.SaveAsTga(stream, encoder);
         }
 
         private void Unpack<T>()
