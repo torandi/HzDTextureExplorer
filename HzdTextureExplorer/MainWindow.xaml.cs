@@ -18,9 +18,6 @@ namespace HzdTextureExplorer
 
         public MainWindow()
         {
-
-            Debug.WriteLine("Loaded");
-
             InitializeComponent();
         }
 
@@ -222,12 +219,6 @@ namespace HzdTextureExplorer
         private void LoadCoreFile(String path)
         {
             string ext = Path.GetExtension(path);
-            if(ext != ".core")
-            {
-                MessageBox.Show($"Invalid extension {ext}. Only .core files supported.");
-                return;
-            }
-
             try
             {
                 m_core = new HzDCore(path);
