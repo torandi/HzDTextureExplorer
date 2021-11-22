@@ -235,7 +235,7 @@ namespace HzdTextureExplorer
                 case ImageFormat.Formats.BC1:
                     ddsFormat.Size = 32;
                     ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
-                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.D3DFMT_DXT1;
+                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
                     ddsFormat.RGBBitCount = 0;
                     ddsFormat.RBitMask = 0;
                     ddsFormat.GBitMask = 0;
@@ -245,7 +245,7 @@ namespace HzdTextureExplorer
                 case ImageFormat.Formats.BC3:
                     ddsFormat.Size = 32;
                     ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
-                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.D3DFMT_DXT3;
+                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
                     ddsFormat.RGBBitCount = 0;
                     ddsFormat.RBitMask = 0;
                     ddsFormat.GBitMask = 0;
@@ -305,6 +305,12 @@ namespace HzdTextureExplorer
 
                 switch (format.Format)
                 {
+                    case ImageFormat.Formats.BC1:
+                        writer.Write((uint)Pfim.DxgiFormat.BC1_UNORM);
+                        break;
+                    case ImageFormat.Formats.BC3:
+                        writer.Write((uint)Pfim.DxgiFormat.BC3_UNORM);
+                        break;
                     case ImageFormat.Formats.BC5U:
                         writer.Write((uint)Pfim.DxgiFormat.BC5_UNORM);
                         break;

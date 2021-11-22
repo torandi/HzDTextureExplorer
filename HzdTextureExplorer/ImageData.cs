@@ -132,32 +132,49 @@ namespace HzdTextureExplorer
             if (header.PixelFormat.PixelFormatFlags != Pfim.DdsPixelFormatFlags.Fourcc)
                 throw new HzDException("PixelFormat missing FourcCC flag");
 
+            string fileDdsFormat = "";
+            if (header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10)
+                fileDdsFormat = dxt10Header.DxgiFormat.ToString();
+            else
+                fileDdsFormat = header.PixelFormat.FourCC.ToString();
+
             if (Format.Format == ImageFormat.Formats.BC1)
             {
-                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.D3DFMT_DXT1)
+                if (!(header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.D3DFMT_DXT1 
+                    || (header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10 && 
+                        (dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC1_UNORM || dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC1_UNORM_SRGB)
+                        ))
+                    )
                 {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC1");
+                    throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC1");
                 }
             }
             else if (Format.Format == ImageFormat.Formats.BC3)
             {
-                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.D3DFMT_DXT3)
+                if (!(header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.D3DFMT_DXT3
+                    || (header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10 && 
+                        (dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC3_UNORM || dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC3_UNORM_SRGB)
+                        ))
+                    )
                 {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC3");
+                    throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC3");
                 }
             }
             else if (Format.Format == ImageFormat.Formats.BC5U)
             {
-                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC5_UNORM)
+                if (!(
+                    header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.BC5U ||
+                    (header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10 && dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC5_UNORM)
+                    ))
                 {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC5U");
+                    throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC5U");
                 }
             }
             else if (Format.Format == ImageFormat.Formats.BC6U)
             {
                 if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC6H_UF16)
                 {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC6U");
+                    throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC6U");
                 }
 
             }
@@ -165,7 +182,7 @@ namespace HzdTextureExplorer
             {
                 if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC6H_SF16)
                 {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC6S");
+                    throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC6S");
                 }
 
             }
@@ -173,12 +190,12 @@ namespace HzdTextureExplorer
             {
                 if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC7_UNORM)
                 {
-                    throw new HzDException($"Invalid PixelFormat in dds. Expected BC7");
+                    throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC7");
                 }
             }
             else
             {
-                throw new HzDException($"Unimplemented format in core file texture: {Format.Format.ToString()}");
+                throw new HzDException($"Unimplemented format {fileDdsFormat} in core file texture.");
             }
 
             if (HasStreamableData)
