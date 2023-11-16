@@ -124,7 +124,7 @@ namespace HzdTextureExplorer
             {
                 writer.Write(ReadStreamData(image.StreamStart, image.StreamLength));
             }
-            else
+            if (image.HasEmbeddedData)
             {
                 writer.Write(image.EmbeddedData);
             }
@@ -422,14 +422,12 @@ namespace HzdTextureExplorer
             BC6S = 0x4A,
             BC7 = 0x4B
         };
-        byte Unknown;
         public Formats Format; // byte
         byte Unknown2;
         byte Unknown3;
 
         public ImageFormat(BinaryReader reader)
         {
-            Unknown = reader.ReadByte();
             Format = (Formats)reader.ReadByte();
             Unknown2 = reader.ReadByte();
             Unknown3 = reader.ReadByte();

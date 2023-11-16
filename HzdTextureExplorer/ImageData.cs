@@ -10,9 +10,11 @@ namespace HzdTextureExplorer
 
         public ushort Unknown1;
         public ImageSize Size;
-        public ushort Unknown2;
+        public ushort Slices;
 
         public uint MipMaps;
+        public uint StreamMipMaps;
+        
 
         public byte[] Magic;
 
@@ -54,6 +56,13 @@ namespace HzdTextureExplorer
             }
         }
 
+        public bool HasEmbeddedData
+        {
+            get
+            {
+                return EmbeddedSize > 0;
+            }
+        }
 
         public ImageData(FileStream stream, BinaryReader reader, long size)
         {
@@ -64,7 +73,8 @@ namespace HzdTextureExplorer
             Unknown1 = reader.ReadUInt16();
             Size = ImageSize.Read14bits(reader);
 
-            Unknown2 = reader.ReadUInt16();
+            Slices = reader.ReadUInt16();
+            MipMaps = reader.ReadByte();
             Format = new ImageFormat(reader);
             Magic = reader.ReadBytes(4); // 0x00 0xA9 0xFF 0x00
 
@@ -80,7 +90,7 @@ namespace HzdTextureExplorer
 
             if(StreamSize > 0)
             {
-                MipMaps = reader.ReadUInt32();
+                StreamMipMaps = reader.ReadUInt32();
                 uint cacheSize = reader.ReadUInt32();
                 char[] cacheString = reader.ReadChars((int)cacheSize);
                 CacheString = new string(cacheString);
@@ -207,7 +217,7 @@ namespace HzdTextureExplorer
 
                 core.UpdateImage(this, imageData);
             }
-            else
+            if (HasEmbeddedData)
             {
                 byte[] imageData = new byte[EmbeddedSize];
                 int readBytes = file.Read(imageData, 0, (int)EmbeddedSize);
