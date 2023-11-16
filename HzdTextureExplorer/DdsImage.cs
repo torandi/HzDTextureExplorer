@@ -77,14 +77,7 @@ namespace HzdTextureExplorer
 
             m_stream = new MemoryStream();
 
-            var encoder = new PngEncoder
-            {
-                ColorType = PngColorType.Rgb,
-                BitDepth = PngBitDepth.Bit8,
-                TransparentColorMode = PngTransparentColorMode.Preserve
-            };
-
-            m_unpacked.SaveAsPng(m_stream, encoder);
+            WritePng(m_stream);
 
             m_bitmap = new BitmapImage();
             m_bitmap.BeginInit();
@@ -95,6 +88,17 @@ namespace HzdTextureExplorer
             m_bitmap.EndInit();
         }
 
+        public void WritePng(Stream stream)
+        {
+            var encoder = new PngEncoder
+            {
+                ColorType = PngColorType.Rgb,
+                BitDepth = PngBitDepth.Bit8,
+                TransparentColorMode = PngTransparentColorMode.Preserve
+            };
+
+            m_unpacked.SaveAsPng(stream, encoder);
+        }
         public void WriteTga(Stream stream)
         {
             var encoder = new TgaEncoder
