@@ -107,7 +107,7 @@ namespace HzdTextureExplorer
             HzDException exception = null;
             try
             {
-                Helper.WriteDdsHeader(writer, image.Width, image.Height, image.MipMaps, image.Format);
+                Helper.WriteDdsHeader(writer, image.Width, image.Height, image.MipMaps, image.Slices, image.Format);
             }
             catch(HzDException ex)
             {
@@ -204,7 +204,7 @@ namespace HzdTextureExplorer
             return new string(chars);
         }
 
-        public static void WriteDdsHeader(BinaryWriter writer, UInt32 width, UInt32 height, uint mipmapCount, ImageFormat format)
+        public static void WriteDdsHeader(BinaryWriter writer, UInt32 width, UInt32 height, uint mipmapCount, uint slices, ImageFormat format)
         {
             const UInt32 DDSD_CAPS = 0x1;
             const UInt32 DDSD_HEIGHT = 0x2;
@@ -221,7 +221,7 @@ namespace HzdTextureExplorer
             writer.Write(height);
             writer.Write(width);
             writer.Write(dummy); // pitch
-            writer.Write(dummy); // depth
+            writer.Write((UInt32)slices); // depth
             writer.Write((UInt32)mipmapCount);
             for (uint i = 0; i < 11; ++i)
                 writer.Write(dummy); // reserved
@@ -233,48 +233,13 @@ namespace HzdTextureExplorer
             switch (format.Format)
             {
                 case ImageFormat.Formats.BC1:
-                    ddsFormat.Size = 32;
-                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
-                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
-                    ddsFormat.RGBBitCount = 0;
-                    ddsFormat.RBitMask = 0;
-                    ddsFormat.GBitMask = 0;
-                    ddsFormat.BBitMask = 0;
-                    ddsFormat.ABitMask = 0;
-                    break;
                 case ImageFormat.Formats.BC3:
-                    ddsFormat.Size = 32;
-                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
-                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
-                    ddsFormat.RGBBitCount = 0;
-                    ddsFormat.RBitMask = 0;
-                    ddsFormat.GBitMask = 0;
-                    ddsFormat.BBitMask = 0;
-                    ddsFormat.ABitMask = 0;
-                    break;
+                case ImageFormat.Formats.BC4U:
                 case ImageFormat.Formats.BC5U:
-                    ddsFormat.Size = 32;
-                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
-                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
-                    ddsFormat.RGBBitCount = 0;
-                    ddsFormat.RBitMask = 0;
-                    ddsFormat.GBitMask = 0;
-                    ddsFormat.BBitMask = 0;
-                    ddsFormat.ABitMask = 0;
-                    break;
                 case ImageFormat.Formats.BC6U:
                 case ImageFormat.Formats.BC6S:
-                    ddsFormat.Size = 32;
-                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
-                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
-                    ddsFormat.RGBBitCount = 0;
-                    ddsFormat.RBitMask = 0;
-                    ddsFormat.GBitMask = 0;
-                    ddsFormat.BBitMask = 0;
-                    ddsFormat.ABitMask = 0;
-                    break;
-
                 case ImageFormat.Formats.BC7:
+                case ImageFormat.Formats.RGBA_8888:
                     ddsFormat.Size = 32;
                     ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
                     ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
@@ -285,7 +250,7 @@ namespace HzdTextureExplorer
                     ddsFormat.ABitMask = 0;
                     break;
                 default:
-                    throw new HzDException($"Only BC1, BC3, BC5U, BC6 and BC7 supported right now. Tried to write {format.Format.ToString()}");
+                    throw new HzDException($"Only BC1, BC3, BC4U, BC5U, BC6, BC7 and RGBA_8888 supported right now. Tried to write {format.Format.ToString()}");
             }
 
             writer.Write(ddsFormat.Size);
@@ -311,6 +276,9 @@ namespace HzdTextureExplorer
                     case ImageFormat.Formats.BC3:
                         writer.Write((uint)Pfim.DxgiFormat.BC3_UNORM);
                         break;
+                    case ImageFormat.Formats.BC4U:
+                        writer.Write((uint)Pfim.DxgiFormat.BC4_UNORM);
+                        break;
                     case ImageFormat.Formats.BC5U:
                         writer.Write((uint)Pfim.DxgiFormat.BC5_UNORM);
                         break;
@@ -323,6 +291,9 @@ namespace HzdTextureExplorer
                     case ImageFormat.Formats.BC7:
                         writer.Write((uint)Pfim.DxgiFormat.BC7_UNORM);
                         break;
+                    case ImageFormat.Formats.RGBA_8888:
+                        writer.Write((uint)Pfim.DxgiFormat.R8G8B8A8_UNORM);
+                        break;
                 }
                 writer.Write((uint)Pfim.D3D10ResourceDimension.D3D10_RESOURCE_DIMENSION_TEXTURE2D);
                 writer.Write(dummy); // misc flag
@@ -333,13 +304,37 @@ namespace HzdTextureExplorer
 
         public static void AddImageInfo(List<InfoItem> target, ImageData image)
         {
+            target.Add(new InfoItem("Type", image.Type.ToString()));
             target.Add(new InfoItem("Width", image.Width.ToString()));
             target.Add(new InfoItem("Height", image.Height.ToString()));
             target.Add(new InfoItem("Format", image.Format.ToString()));
-            target.Add(new InfoItem("Mips Maps", image.MipMaps.ToString()));
+            target.Add(new InfoItem("Slices", image.Slices.ToString()));
+            target.Add(new InfoItem("Mip Maps", image.MipMaps.ToString()));
+            target.Add(new InfoItem("Stream MipMaps", image.StreamMipMaps.ToString()));
         }
     }
 
+    public struct ImageType
+    {
+        public enum Types
+        {
+            Texture_2D = 0x0,
+            Texture_3D = 0x1,
+            Texture_CubeMap = 0x2,
+            Texture_2DArray = 0x3,
+        };
+        public Types Type; // byte
+
+        public ImageType(BinaryReader reader)
+        {
+            Type = (Types)reader.ReadUInt16();
+        }
+
+        public override string ToString()
+        {
+            return Type.ToString();
+        }
+    }
     public struct ImageFormat
     {
         public enum Formats

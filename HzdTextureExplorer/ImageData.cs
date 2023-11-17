@@ -8,9 +8,9 @@ namespace HzdTextureExplorer
         private long BasePosition;
         private ulong EmbeddedPosition;
 
-        public ushort Unknown1;
+        public readonly ImageType Type;
         public ImageSize Size;
-        public ushort Slices;
+        public uint Slices;
 
         public uint MipMaps;
         public uint StreamMipMaps;
@@ -70,7 +70,7 @@ namespace HzdTextureExplorer
             if (size == 0)
                 return;
 
-            Unknown1 = reader.ReadUInt16();
+            Type = new ImageType(reader);
             Size = ImageSize.Read14bits(reader);
 
             Slices = reader.ReadUInt16();
@@ -170,6 +170,16 @@ namespace HzdTextureExplorer
                     throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC3");
                 }
             }
+            else if (Format.Format == ImageFormat.Formats.BC4U)
+            {
+                if (!(
+                    header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.BC4U ||
+                    (header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10 && dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC4_UNORM)
+                    ))
+                {
+                    throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC4U");
+                }
+            }
             else if (Format.Format == ImageFormat.Formats.BC5U)
             {
                 if (!(
@@ -201,6 +211,13 @@ namespace HzdTextureExplorer
                 if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.BC7_UNORM)
                 {
                     throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC7");
+                }
+            }
+            else if (Format.Format == ImageFormat.Formats.RGBA_8888)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.R8G8B8A8_UNORM)
+                {
+                    throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected RGBA_8888");
                 }
             }
             else

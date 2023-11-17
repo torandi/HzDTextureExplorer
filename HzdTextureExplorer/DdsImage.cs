@@ -34,7 +34,7 @@ namespace HzdTextureExplorer
 
         public DDSImage(string file)
         {
-            m_image = Pfim.Pfim.FromFile(file);
+            m_image = Pfim.Pfimage.FromFile(file);
             Process();
         }
 
@@ -71,6 +71,10 @@ namespace HzdTextureExplorer
             else if (m_image.Format == Pfim.ImageFormat.Rgb24)
             {
                 Unpack<Bgr24>();
+            }
+            else if (m_image.Format == Pfim.ImageFormat.Rgb8)
+            {
+                Unpack<L8>();
             }
             else
                 throw new Exception("Unsupported pixel format (" + m_image.Format + ")");
