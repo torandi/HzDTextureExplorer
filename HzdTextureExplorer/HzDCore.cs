@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Pfim;
 
 namespace HzdTextureExplorer
 {
@@ -206,22 +207,21 @@ namespace HzdTextureExplorer
 
         public static void WriteDdsHeader(BinaryWriter writer, UInt32 width, UInt32 height, uint mipmapCount, uint slices, ImageFormat format)
         {
-            const UInt32 DDSD_CAPS = 0x1;
-            const UInt32 DDSD_HEIGHT = 0x2;
-            const UInt32 DDSD_WIDTH = 0x4;
-            const UInt32 DDSD_PIXELFORMAT = 0x1000;
-            const UInt32 DDSD_MIPMAPCOUNT = 0x20000;
+            const UInt32 DDSCAPS_COMPLEX = 0x8;
+            const UInt32 DDSCAPS_MIPMAP = 0x400000;
+            const UInt32 DDSCAPS_TEXTURE = 0x1000;
             const UInt32 dummy = 0;
 
             byte[] magic = new byte[]{ (byte)'D', (byte)'D', (byte)'S', (byte)' ' };
             writer.Write(magic);
             const UInt32 HeaderSize = 124;
             writer.Write(HeaderSize);
-            writer.Write(DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_MIPMAPCOUNT);
+            Pfim.DdsFlags flags = Pfim.DdsFlags.Caps | Pfim.DdsFlags.Height | Pfim.DdsFlags.Width | Pfim.DdsFlags.PixelFormat | Pfim.DdsFlags.MipMapCount;
+            writer.Write((UInt32)flags);
             writer.Write(height);
             writer.Write(width);
             writer.Write(dummy); // pitch
-            writer.Write((UInt32)slices); // depth
+            writer.Write(dummy); // depth
             writer.Write((UInt32)mipmapCount);
             for (uint i = 0; i < 11; ++i)
                 writer.Write(dummy); // reserved
@@ -262,8 +262,9 @@ namespace HzdTextureExplorer
             writer.Write(ddsFormat.BBitMask);
             writer.Write(ddsFormat.ABitMask);
 
-            for (uint i = 0; i < 5; ++i)
-                writer.Write(dummy); // caps and reserved2
+            writer.Write(DDSCAPS_COMPLEX | DDSCAPS_TEXTURE | DDSCAPS_MIPMAP); // caps
+            for (uint i = 0; i < 4; ++i)
+                writer.Write(dummy); // caps2-4 and reserved2
 
             if(ddsFormat.FourCC == Pfim.CompressionAlgorithm.DX10)
             {
@@ -297,7 +298,7 @@ namespace HzdTextureExplorer
                 }
                 writer.Write((uint)Pfim.D3D10ResourceDimension.D3D10_RESOURCE_DIMENSION_TEXTURE2D);
                 writer.Write(dummy); // misc flag
-                writer.Write((uint)1); // array size
+                writer.Write((uint)slices>0?slices:1); // array size
                 writer.Write((uint)8); // alpha mode
             }
         }

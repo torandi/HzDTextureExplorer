@@ -125,6 +125,11 @@ namespace HzdTextureExplorer
                 // Also read dxt10 header
                 dxt10Header = new Pfim.DdsHeaderDxt10(file);
             }
+            
+            if(dxt10Header.ArraySize < Slices)
+            {
+                throw new HzDException($"Imported dds has too few slices, needs at least {Slices}. (had only {dxt10Header.ArraySize})");
+            }
 
             if(header.Width != Width || header.Height != Height)
             {
@@ -133,7 +138,7 @@ namespace HzdTextureExplorer
 
             if(header.MipMapCount < MipMaps)
             {
-                throw new HzDException($"Imported dds has too few mipsmaps, needs at least {MipMaps}. (had only {header.MipMapCount}");
+                throw new HzDException($"Imported dds has too few mipsmaps, needs at least {MipMaps}. (had only {header.MipMapCount})");
             }
 
             if (header.PixelFormat.Size != 32)

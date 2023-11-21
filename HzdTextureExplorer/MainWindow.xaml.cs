@@ -166,6 +166,7 @@ namespace HzdTextureExplorer
                 dialog.FilterIndex = 1;
                 dialog.RestoreDirectory = true;
                 dialog.DefaultExt = "dds";
+                dialog.FileName = tex.Name;
                 dialog.Title = $"Export {tex.Name}";
                     
                 if(dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
