@@ -106,9 +106,18 @@ namespace HzdTextureExplorer
         public void ReadImage(ImageData image, BinaryWriter writer, bool allowFail = false)
         {
             HzDException exception = null;
+            uint height = image.Height;
+            uint slices = image.Slices;
+
+            // Pfimage, PNG and TGA not supporting layers => stack the slices vertical into one image
+            if (image.Type.Type == ImageType.Types.Texture_2DArray && writer.BaseStream.GetType() == typeof(System.IO.MemoryStream)) {
+                height *= slices;
+                slices = 1;
+            };
+
             try
             {
-                Helper.WriteDdsHeader(writer, image.Width, image.Height, image.MipMaps, image.Slices, image.Format);
+                Helper.WriteDdsHeader(writer, image.Width, height, image.MipMaps, slices, image.Format);
             }
             catch(HzDException ex)
             {
