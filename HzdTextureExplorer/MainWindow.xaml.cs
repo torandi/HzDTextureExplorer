@@ -245,6 +245,7 @@ namespace HzdTextureExplorer
                         Images.Items.Add(tex);
                     }
                 }
+                Images.SelectedItem = Images.Items.GetItemAt(0);
 
             }
             catch (Exception e)

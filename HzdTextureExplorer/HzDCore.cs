@@ -299,7 +299,7 @@ namespace HzdTextureExplorer
                 writer.Write((uint)Pfim.D3D10ResourceDimension.D3D10_RESOURCE_DIMENSION_TEXTURE2D);
                 writer.Write(dummy); // misc flag
                 writer.Write((uint)slices>0?slices:1); // array size
-                writer.Write((uint)8); // alpha mode
+                writer.Write((uint)1); // straight alpha mode
             }
         }
 

@@ -96,7 +96,7 @@ namespace HzdTextureExplorer
         {
             var encoder = new PngEncoder
             {
-                ColorType = PngColorType.Rgb,
+                ColorType = PngColorType.RgbWithAlpha,
                 BitDepth = PngBitDepth.Bit8,
                 TransparentColorMode = PngTransparentColorMode.Preserve
             };
