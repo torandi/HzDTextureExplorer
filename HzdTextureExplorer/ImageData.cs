@@ -116,6 +116,7 @@ namespace HzdTextureExplorer
         public void UpdateFromFile(string filename, HzDCore core)
         {
             FileStream file = File.OpenRead(filename);
+            uint arraySize = Slices>0?Slices:1;
 
             // Read header
             Pfim.DdsHeader header = new Pfim.DdsHeader(file);
@@ -125,10 +126,10 @@ namespace HzdTextureExplorer
                 // Also read dxt10 header
                 dxt10Header = new Pfim.DdsHeaderDxt10(file);
             }
-            
-            if(dxt10Header.ArraySize < Slices)
+
+            if(dxt10Header.ArraySize != arraySize)
             {
-                throw new HzDException($"Imported dds has too few slices, needs at least {Slices}. (had only {dxt10Header.ArraySize})");
+                throw new HzDException($"Array size of imported dds file don't match. Must be {arraySize}, but was {dxt10Header.ArraySize}");
             }
 
             if(header.Width != Width || header.Height != Height)

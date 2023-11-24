@@ -146,7 +146,7 @@ namespace HzdTextureExplorer
 
         public Stream OpenImage(ImageData image)
         {
-            MemoryStream stream = new MemoryStream((int)(148 + image.StreamSize));
+            MemoryStream stream = new MemoryStream((int)(148 + image.StreamSize + image.EmbeddedSize));
             BinaryWriter writer = new BinaryWriter(stream);
 
             ReadImage(image, writer);
