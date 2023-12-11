@@ -22,7 +22,7 @@
 		<Grid AllowDrop="True" Drop="OnDrop">
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition Width="1*"/>
-				<ColumnDefinition Width="2*"/>
+				<ColumnDefinition Width="3*"/>
 			</Grid.ColumnDefinitions>
 			<Grid.RowDefinitions>
 				<RowDefinition Height="3*"/>
@@ -36,7 +36,32 @@
 			</ListBox>
 			<ListBox Name="Info" Grid.Column="0" Grid.Row="1">
 			</ListBox>
-			<Image Name="Preview" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2"/>
+			<DockPanel Name="dpPreview" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2">
+				<DockPanel.Background>
+					<DrawingBrush TileMode="Tile" Viewport="0,0,20,20" ViewportUnits="Absolute">
+						<DrawingBrush.Drawing>
+							<GeometryDrawing Brush="Lightgray" Geometry="M5,5 L0,5 0,10 5,10 5,5 10,5 10,0 5,0 Z"/>
+						</DrawingBrush.Drawing>
+					</DrawingBrush>
+				</DockPanel.Background>
+				<Grid>
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="*"/>
+						<ColumnDefinition Width="Auto"/>
+						<ColumnDefinition Width="*"/>
+					</Grid.ColumnDefinitions>
+					<Grid.RowDefinitions>
+						<RowDefinition Height="*"/>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="*"/>
+					</Grid.RowDefinitions>
+					<Border Name="brdPreview" BorderThickness="2" BorderBrush="Red" Grid.Column="1" Grid.Row="1"
+						MaxHeight="{Binding ActualHeight, ElementName=dpPreview}" MaxWidth="{Binding ActualWidth, ElementName=dpPreview}">
+						<Image Name="Preview" Source="Resources/hzd_texture_icon_256.png"
+						       VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+					</Border>
+				</Grid>
+			</DockPanel>
 		</Grid>
     </DockPanel>
 </Window>

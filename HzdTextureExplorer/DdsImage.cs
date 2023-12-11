@@ -34,7 +34,7 @@ namespace HzdTextureExplorer
 
         public DDSImage(string file)
         {
-            m_image = Pfim.Pfim.FromFile(file);
+            m_image = Pfim.Pfimage.FromFile(file);
             Process();
         }
 
@@ -72,19 +72,16 @@ namespace HzdTextureExplorer
             {
                 Unpack<Bgr24>();
             }
+            else if (m_image.Format == Pfim.ImageFormat.Rgb8)
+            {
+                Unpack<L8>();
+            }
             else
                 throw new Exception("Unsupported pixel format (" + m_image.Format + ")");
 
             m_stream = new MemoryStream();
 
-            var encoder = new PngEncoder
-            {
-                ColorType = PngColorType.Rgb,
-                BitDepth = PngBitDepth.Bit8,
-                TransparentColorMode = PngTransparentColorMode.Preserve
-            };
-
-            m_unpacked.SaveAsPng(m_stream, encoder);
+            WritePng(m_stream);
 
             m_bitmap = new BitmapImage();
             m_bitmap.BeginInit();
@@ -95,6 +92,17 @@ namespace HzdTextureExplorer
             m_bitmap.EndInit();
         }
 
+        public void WritePng(Stream stream)
+        {
+            var encoder = new PngEncoder
+            {
+                ColorType = PngColorType.RgbWithAlpha,
+                BitDepth = PngBitDepth.Bit8,
+                TransparentColorMode = PngTransparentColorMode.Preserve
+            };
+
+            m_unpacked.SaveAsPng(stream, encoder);
+        }
         public void WriteTga(Stream stream)
         {
             var encoder = new TgaEncoder

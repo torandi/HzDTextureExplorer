@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Pfim;
 
 namespace HzdTextureExplorer
 {
@@ -105,9 +106,18 @@ namespace HzdTextureExplorer
         public void ReadImage(ImageData image, BinaryWriter writer, bool allowFail = false)
         {
             HzDException exception = null;
+            uint height = image.Height;
+            uint slices = image.Slices;
+
+            // Pfimage, PNG and TGA not supporting layers => stack the slices vertical into one image
+            if (image.Type.Type == ImageType.Types.Texture_2DArray && writer.BaseStream.GetType() == typeof(System.IO.MemoryStream)) {
+                height *= slices;
+                slices = 1;
+            };
+
             try
             {
-                Helper.WriteDdsHeader(writer, image.Width, image.Height, image.MipMaps, image.Format);
+                Helper.WriteDdsHeader(writer, image.Width, height, image.MipMaps, slices, image.Format);
             }
             catch(HzDException ex)
             {
@@ -124,7 +134,7 @@ namespace HzdTextureExplorer
             {
                 writer.Write(ReadStreamData(image.StreamStart, image.StreamLength));
             }
-            else
+            if (image.HasEmbeddedData)
             {
                 writer.Write(image.EmbeddedData);
             }
@@ -136,7 +146,7 @@ namespace HzdTextureExplorer
 
         public Stream OpenImage(ImageData image)
         {
-            MemoryStream stream = new MemoryStream((int)(148 + image.StreamSize));
+            MemoryStream stream = new MemoryStream((int)(148 + image.StreamSize + image.EmbeddedSize));
             BinaryWriter writer = new BinaryWriter(stream);
 
             ReadImage(image, writer);
@@ -204,20 +214,19 @@ namespace HzdTextureExplorer
             return new string(chars);
         }
 
-        public static void WriteDdsHeader(BinaryWriter writer, UInt32 width, UInt32 height, uint mipmapCount, ImageFormat format)
+        public static void WriteDdsHeader(BinaryWriter writer, UInt32 width, UInt32 height, uint mipmapCount, uint slices, ImageFormat format)
         {
-            const UInt32 DDSD_CAPS = 0x1;
-            const UInt32 DDSD_HEIGHT = 0x2;
-            const UInt32 DDSD_WIDTH = 0x4;
-            const UInt32 DDSD_PIXELFORMAT = 0x1000;
-            const UInt32 DDSD_MIPMAPCOUNT = 0x20000;
+            const UInt32 DDSCAPS_COMPLEX = 0x8;
+            const UInt32 DDSCAPS_MIPMAP = 0x400000;
+            const UInt32 DDSCAPS_TEXTURE = 0x1000;
             const UInt32 dummy = 0;
 
             byte[] magic = new byte[]{ (byte)'D', (byte)'D', (byte)'S', (byte)' ' };
             writer.Write(magic);
             const UInt32 HeaderSize = 124;
             writer.Write(HeaderSize);
-            writer.Write(DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT | DDSD_MIPMAPCOUNT);
+            Pfim.DdsFlags flags = Pfim.DdsFlags.Caps | Pfim.DdsFlags.Height | Pfim.DdsFlags.Width | Pfim.DdsFlags.PixelFormat | Pfim.DdsFlags.MipMapCount;
+            writer.Write((UInt32)flags);
             writer.Write(height);
             writer.Write(width);
             writer.Write(dummy); // pitch
@@ -233,48 +242,13 @@ namespace HzdTextureExplorer
             switch (format.Format)
             {
                 case ImageFormat.Formats.BC1:
-                    ddsFormat.Size = 32;
-                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
-                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
-                    ddsFormat.RGBBitCount = 0;
-                    ddsFormat.RBitMask = 0;
-                    ddsFormat.GBitMask = 0;
-                    ddsFormat.BBitMask = 0;
-                    ddsFormat.ABitMask = 0;
-                    break;
                 case ImageFormat.Formats.BC3:
-                    ddsFormat.Size = 32;
-                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
-                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
-                    ddsFormat.RGBBitCount = 0;
-                    ddsFormat.RBitMask = 0;
-                    ddsFormat.GBitMask = 0;
-                    ddsFormat.BBitMask = 0;
-                    ddsFormat.ABitMask = 0;
-                    break;
+                case ImageFormat.Formats.BC4U:
                 case ImageFormat.Formats.BC5U:
-                    ddsFormat.Size = 32;
-                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
-                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
-                    ddsFormat.RGBBitCount = 0;
-                    ddsFormat.RBitMask = 0;
-                    ddsFormat.GBitMask = 0;
-                    ddsFormat.BBitMask = 0;
-                    ddsFormat.ABitMask = 0;
-                    break;
                 case ImageFormat.Formats.BC6U:
                 case ImageFormat.Formats.BC6S:
-                    ddsFormat.Size = 32;
-                    ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
-                    ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
-                    ddsFormat.RGBBitCount = 0;
-                    ddsFormat.RBitMask = 0;
-                    ddsFormat.GBitMask = 0;
-                    ddsFormat.BBitMask = 0;
-                    ddsFormat.ABitMask = 0;
-                    break;
-
                 case ImageFormat.Formats.BC7:
+                case ImageFormat.Formats.RGBA_8888:
                     ddsFormat.Size = 32;
                     ddsFormat.PixelFormatFlags = Pfim.DdsPixelFormatFlags.Fourcc;
                     ddsFormat.FourCC = Pfim.CompressionAlgorithm.DX10;
@@ -285,7 +259,7 @@ namespace HzdTextureExplorer
                     ddsFormat.ABitMask = 0;
                     break;
                 default:
-                    throw new HzDException($"Only BC1, BC3, BC5U, BC6 and BC7 supported right now. Tried to write {format.Format.ToString()}");
+                    throw new HzDException($"Only BC1, BC3, BC4U, BC5U, BC6, BC7 and RGBA_8888 supported right now. Tried to write {format.Format.ToString()}");
             }
 
             writer.Write(ddsFormat.Size);
@@ -297,8 +271,9 @@ namespace HzdTextureExplorer
             writer.Write(ddsFormat.BBitMask);
             writer.Write(ddsFormat.ABitMask);
 
-            for (uint i = 0; i < 5; ++i)
-                writer.Write(dummy); // caps and reserved2
+            writer.Write(DDSCAPS_COMPLEX | DDSCAPS_TEXTURE | DDSCAPS_MIPMAP); // caps
+            for (uint i = 0; i < 4; ++i)
+                writer.Write(dummy); // caps2-4 and reserved2
 
             if(ddsFormat.FourCC == Pfim.CompressionAlgorithm.DX10)
             {
@@ -310,6 +285,9 @@ namespace HzdTextureExplorer
                         break;
                     case ImageFormat.Formats.BC3:
                         writer.Write((uint)Pfim.DxgiFormat.BC3_UNORM);
+                        break;
+                    case ImageFormat.Formats.BC4U:
+                        writer.Write((uint)Pfim.DxgiFormat.BC4_UNORM);
                         break;
                     case ImageFormat.Formats.BC5U:
                         writer.Write((uint)Pfim.DxgiFormat.BC5_UNORM);
@@ -323,23 +301,50 @@ namespace HzdTextureExplorer
                     case ImageFormat.Formats.BC7:
                         writer.Write((uint)Pfim.DxgiFormat.BC7_UNORM);
                         break;
+                    case ImageFormat.Formats.RGBA_8888:
+                        writer.Write((uint)Pfim.DxgiFormat.R8G8B8A8_UNORM);
+                        break;
                 }
                 writer.Write((uint)Pfim.D3D10ResourceDimension.D3D10_RESOURCE_DIMENSION_TEXTURE2D);
                 writer.Write(dummy); // misc flag
-                writer.Write((uint)1); // array size
-                writer.Write((uint)8); // alpha mode
+                writer.Write((uint)slices>0?slices:1); // array size
+                writer.Write((uint)1); // straight alpha mode
             }
         }
 
         public static void AddImageInfo(List<InfoItem> target, ImageData image)
         {
+            target.Add(new InfoItem("Type", image.Type.ToString()));
             target.Add(new InfoItem("Width", image.Width.ToString()));
             target.Add(new InfoItem("Height", image.Height.ToString()));
             target.Add(new InfoItem("Format", image.Format.ToString()));
-            target.Add(new InfoItem("Mips Maps", image.MipMaps.ToString()));
+            target.Add(new InfoItem("Slices", image.Slices.ToString()));
+            target.Add(new InfoItem("Mip Maps", image.MipMaps.ToString()));
+            target.Add(new InfoItem("Stream MipMaps", image.StreamMipMaps.ToString()));
         }
     }
 
+    public struct ImageType
+    {
+        public enum Types
+        {
+            Texture_2D = 0x0,
+            Texture_3D = 0x1,
+            Texture_CubeMap = 0x2,
+            Texture_2DArray = 0x3,
+        };
+        public Types Type; // byte
+
+        public ImageType(BinaryReader reader)
+        {
+            Type = (Types)reader.ReadUInt16();
+        }
+
+        public override string ToString()
+        {
+            return Type.ToString();
+        }
+    }
     public struct ImageFormat
     {
         public enum Formats
@@ -422,14 +427,12 @@ namespace HzdTextureExplorer
             BC6S = 0x4A,
             BC7 = 0x4B
         };
-        byte Unknown;
         public Formats Format; // byte
         byte Unknown2;
         byte Unknown3;
 
         public ImageFormat(BinaryReader reader)
         {
-            Unknown = reader.ReadByte();
             Format = (Formats)reader.ReadByte();
             Unknown2 = reader.ReadByte();
             Unknown3 = reader.ReadByte();

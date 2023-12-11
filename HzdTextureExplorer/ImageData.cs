@@ -8,11 +8,13 @@ namespace HzdTextureExplorer
         private long BasePosition;
         private ulong EmbeddedPosition;
 
-        public ushort Unknown1;
+        public readonly ImageType Type;
         public ImageSize Size;
-        public ushort Unknown2;
+        public uint Slices;
 
         public uint MipMaps;
+        public uint StreamMipMaps;
+        
 
         public byte[] Magic;
 
@@ -54,6 +56,13 @@ namespace HzdTextureExplorer
             }
         }
 
+        public bool HasEmbeddedData
+        {
+            get
+            {
+                return EmbeddedSize > 0;
+            }
+        }
 
         public ImageData(FileStream stream, BinaryReader reader, long size)
         {
@@ -61,10 +70,11 @@ namespace HzdTextureExplorer
             if (size == 0)
                 return;
 
-            Unknown1 = reader.ReadUInt16();
+            Type = new ImageType(reader);
             Size = ImageSize.Read14bits(reader);
 
-            Unknown2 = reader.ReadUInt16();
+            Slices = reader.ReadUInt16();
+            MipMaps = reader.ReadByte();
             Format = new ImageFormat(reader);
             Magic = reader.ReadBytes(4); // 0x00 0xA9 0xFF 0x00
 
@@ -80,7 +90,7 @@ namespace HzdTextureExplorer
 
             if(StreamSize > 0)
             {
-                MipMaps = reader.ReadUInt32();
+                StreamMipMaps = reader.ReadUInt32();
                 uint cacheSize = reader.ReadUInt32();
                 char[] cacheString = reader.ReadChars((int)cacheSize);
                 CacheString = new string(cacheString);
@@ -106,6 +116,7 @@ namespace HzdTextureExplorer
         public void UpdateFromFile(string filename, HzDCore core)
         {
             FileStream file = File.OpenRead(filename);
+            uint arraySize = Slices>0?Slices:1;
 
             // Read header
             Pfim.DdsHeader header = new Pfim.DdsHeader(file);
@@ -116,6 +127,11 @@ namespace HzdTextureExplorer
                 dxt10Header = new Pfim.DdsHeaderDxt10(file);
             }
 
+            if(dxt10Header.ArraySize != arraySize)
+            {
+                throw new HzDException($"Array size of imported dds file don't match. Must be {arraySize}, but was {dxt10Header.ArraySize}");
+            }
+
             if(header.Width != Width || header.Height != Height)
             {
                 throw new HzDException($"Dimensions of imported dds file don't match. Must be {Width}x{Height}, but was {header.Width}x{header.Height}");
@@ -123,7 +139,7 @@ namespace HzdTextureExplorer
 
             if(header.MipMapCount < MipMaps)
             {
-                throw new HzDException($"Imported dds has too few mipsmaps, needs at least {MipMaps}. (had only {header.MipMapCount}");
+                throw new HzDException($"Imported dds has too few mipsmaps, needs at least {MipMaps}. (had only {header.MipMapCount})");
             }
 
             if (header.PixelFormat.Size != 32)
@@ -160,6 +176,16 @@ namespace HzdTextureExplorer
                     throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC3");
                 }
             }
+            else if (Format.Format == ImageFormat.Formats.BC4U)
+            {
+                if (!(
+                    header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.BC4U ||
+                    (header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10 && dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC4_UNORM)
+                    ))
+                {
+                    throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC4U");
+                }
+            }
             else if (Format.Format == ImageFormat.Formats.BC5U)
             {
                 if (!(
@@ -193,6 +219,13 @@ namespace HzdTextureExplorer
                     throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected BC7");
                 }
             }
+            else if (Format.Format == ImageFormat.Formats.RGBA_8888)
+            {
+                if (header.PixelFormat.FourCC != Pfim.CompressionAlgorithm.DX10 || dxt10Header.DxgiFormat != Pfim.DxgiFormat.R8G8B8A8_UNORM)
+                {
+                    throw new HzDException($"Invalid PixelFormat {fileDdsFormat} in dds. Expected RGBA_8888");
+                }
+            }
             else
             {
                 throw new HzDException($"Unimplemented format {fileDdsFormat} in core file texture.");
@@ -207,7 +240,7 @@ namespace HzdTextureExplorer
 
                 core.UpdateImage(this, imageData);
             }
-            else
+            if (HasEmbeddedData)
             {
                 byte[] imageData = new byte[EmbeddedSize];
                 int readBytes = file.Read(imageData, 0, (int)EmbeddedSize);

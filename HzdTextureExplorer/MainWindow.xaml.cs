@@ -136,6 +136,10 @@ namespace HzdTextureExplorer
             {
                 tex.WriteDds(file);
             }
+            else if(ext == ".png")
+            {
+                tex.WritePng(file);
+            }
             else if(ext == ".tga")
             {
                 tex.WriteTga(file);
@@ -158,10 +162,11 @@ namespace HzdTextureExplorer
             using(var dialog = new System.Windows.Forms.SaveFileDialog())
             {
                 dialog.InitialDirectory = m_core?.Path;
-                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds|Targa Image File (*.tga)|*.tga";
+                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds|PNG Image File (*.png)|*.png|Targa Image File (*.tga)|*.tga";
                 dialog.FilterIndex = 1;
                 dialog.RestoreDirectory = true;
                 dialog.DefaultExt = "dds";
+                dialog.FileName = tex.Name;
                 dialog.Title = $"Export {tex.Name}";
                     
                 if(dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -190,7 +195,7 @@ namespace HzdTextureExplorer
             using(var dialog = new System.Windows.Forms.SaveFileDialog())
             {
                 dialog.InitialDirectory = m_core?.Path;
-                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds|Targa Image File (*.tga)|*.tga";
+                dialog.Filter = "Direct Draw Surfaces (*.dds)|*.dds|PNG Image File (*.png)|*.png|Targa Image File (*.tga)|*.tga";
                 dialog.FilterIndex = 1;
                 dialog.RestoreDirectory = true;
                 dialog.DefaultExt = "dds";
@@ -240,6 +245,7 @@ namespace HzdTextureExplorer
                         Images.Items.Add(tex);
                     }
                 }
+                Images.SelectedItem = Images.Items.GetItemAt(0);
 
             }
             catch (Exception e)

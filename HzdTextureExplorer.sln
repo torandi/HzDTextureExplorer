@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31624.102
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HzdTextureExplorer", "HzdTextureExplorer\HzdTextureExplorer.csproj", "{67D89072-C891-443C-9B44-FE9071CFE9D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HzdTextureExplorer", "HzdTextureExplorer\HzdTextureExplorer.csproj", "{07F1B53A-655F-4666-95F9-92C69B57302A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{67D89072-C891-443C-9B44-FE9071CFE9D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{67D89072-C891-443C-9B44-FE9071CFE9D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{67D89072-C891-443C-9B44-FE9071CFE9D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{67D89072-C891-443C-9B44-FE9071CFE9D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07F1B53A-655F-4666-95F9-92C69B57302A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07F1B53A-655F-4666-95F9-92C69B57302A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07F1B53A-655F-4666-95F9-92C69B57302A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07F1B53A-655F-4666-95F9-92C69B57302A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {419F0899-3707-488E-ABC3-753865F99EB6}
+		SolutionGuid = {C2EB33D6-F361-4D25-BF85-F0C15B440972}
 	EndGlobalSection
 EndGlobal
