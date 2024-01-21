@@ -78,7 +78,7 @@ namespace HzdTextureExplorer
             Format = new ImageFormat(reader);
             Magic = reader.ReadBytes(4); // 0x00 0xA9 0xFF 0x00
 
-            if(!(Magic[0] == 0 && Magic[1] == 0xa9 && Magic[2] == 0xff && Magic[3] == 0x00))
+            if(!(Magic[0] == 0 && Magic[1] == 0xa9 && Magic[2] == 0xff && (Magic[3] == 0x00 || Magic[3] == 0x01)))
                 throw new HzDException("Invalid magic in texture");
 
             Hash = reader.ReadBytes(16);
