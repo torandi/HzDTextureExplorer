@@ -164,7 +164,7 @@ namespace HzdTextureExplorer
             }
             else if (Format.Format == ImageFormat.Formats.BC3)
             {
-                if (!(header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.D3DFMT_DXT3
+                if (!(header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.D3DFMT_DXT5
                     || (header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10 && 
                         (dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC3_UNORM || dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC3_UNORM_SRGB)
                         ))
