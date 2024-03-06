@@ -11,6 +11,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\HzdTextureLib\HzdTextureLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Resources\hzd_texture_icon_256.png" />
   </ItemGroup>
 

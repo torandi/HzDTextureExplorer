@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using Pfim;
 
-namespace HzdTextureExplorer
+namespace HzdTextureLib
 {
     public class HzDCore
     {

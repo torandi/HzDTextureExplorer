@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace HzdTextureExplorer
+namespace HzdTextureLib
 {
     public class UITexture : BaseItem
     {

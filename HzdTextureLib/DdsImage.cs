@@ -1,12 +1,11 @@
 ﻿using System;
 using System.IO;
-using System.Windows.Media.Imaging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Tga;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace HzdTextureExplorer
+namespace HzdTextureLib
 {
     public class DDSImage
     {
@@ -14,7 +13,6 @@ namespace HzdTextureExplorer
 
         private Image m_unpacked = null;
         private MemoryStream m_stream = null;
-        private BitmapImage m_bitmap = null;
 
         public Pfim.IImage DdsImage
         {
@@ -24,11 +22,11 @@ namespace HzdTextureExplorer
             }
         }
 
-        public BitmapImage Bitmap
+        public MemoryStream Stream
         {
             get
             {
-                return m_bitmap;
+                return m_stream;
             }
         }
 
@@ -82,14 +80,6 @@ namespace HzdTextureExplorer
             m_stream = new MemoryStream();
 
             WritePng(m_stream);
-
-            m_bitmap = new BitmapImage();
-            m_bitmap.BeginInit();
-            m_bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            m_bitmap.DecodePixelWidth = DdsImage.Width;
-            m_bitmap.DecodePixelHeight = DdsImage.Height;
-            m_bitmap.StreamSource = m_stream;
-            m_bitmap.EndInit();
         }
 
         public void WritePng(Stream stream)
