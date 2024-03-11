@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows;
+using System.Windows.Media.Imaging;
+using HzdTextureLib;
 
 namespace HzdTextureExplorer
 {
@@ -81,6 +83,20 @@ namespace HzdTextureExplorer
             }
         }
 
+        private BitmapImage WpfImage(DDSImage image)
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.DecodePixelWidth = image.DdsImage.Width;
+            bitmap.DecodePixelHeight = image.DdsImage.Height;
+            image.Stream.Position = 0;
+            bitmap.StreamSource = image.Stream;
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
+
         private bool UpdateTexture(ITexture tex, string file)
         {
             try
@@ -88,7 +104,7 @@ namespace HzdTextureExplorer
                 tex.UpdateImageData(file);
                 if (tex == Images.SelectedItem)
                 {
-                    Preview.Source = tex.Image.Bitmap; // update preview
+                    Preview.Source = WpfImage(tex.Image); // update preview
                 }
                 return true;
             }
@@ -123,7 +139,7 @@ namespace HzdTextureExplorer
 
                     Texture sel = Images.SelectedItem as Texture;
                     if(sel != null)
-                        Preview.Source = sel.Image.Bitmap;
+                        Preview.Source = WpfImage(sel.Image);
                 }
             }
         }
@@ -281,7 +297,7 @@ namespace HzdTextureExplorer
 
             try
             {
-                Preview.Source = tex.Image.Bitmap;
+                Preview.Source = WpfImage(tex.Image);
             }
             catch (Exception ex)
             {

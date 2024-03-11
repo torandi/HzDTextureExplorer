@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using Pfim;
 
-namespace HzdTextureExplorer
+namespace HzdTextureLib
 {
     public class HzDCore
     {
@@ -46,6 +46,7 @@ namespace HzdTextureExplorer
             m_file = path;
 
             ReadCore(core);
+            core.Close();
         }
 
         private void ReadCore(FileStream core)

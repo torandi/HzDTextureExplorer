@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace HzdTextureExplorer
+namespace HzdTextureLib
 {
     public class ImageData
     {
@@ -76,10 +76,7 @@ namespace HzdTextureExplorer
             Slices = reader.ReadUInt16();
             MipMaps = reader.ReadByte();
             Format = new ImageFormat(reader);
-            Magic = reader.ReadBytes(4); // 0x00 0xA9 0xFF 0x00
-
-            if(!(Magic[0] == 0 && Magic[1] == 0xa9 && Magic[2] == 0xff && (Magic[3] == 0x00 || Magic[3] == 0x01)))
-                throw new HzDException("Invalid magic in texture");
+            Magic = reader.ReadBytes(4); // there are different variants
 
             Hash = reader.ReadBytes(16);
 
@@ -125,11 +122,11 @@ namespace HzdTextureExplorer
             {
                 // Also read dxt10 header
                 dxt10Header = new Pfim.DdsHeaderDxt10(file);
-            }
 
-            if(dxt10Header.ArraySize != arraySize)
-            {
-                throw new HzDException($"Array size of imported dds file don't match. Must be {arraySize}, but was {dxt10Header.ArraySize}");
+                if(dxt10Header.ArraySize != arraySize)
+                {
+                    throw new HzDException($"Array size of imported dds file don't match. Must be {arraySize}, but was {dxt10Header.ArraySize}");
+                }
             }
 
             if(header.Width != Width || header.Height != Height)
@@ -167,7 +164,7 @@ namespace HzdTextureExplorer
             }
             else if (Format.Format == ImageFormat.Formats.BC3)
             {
-                if (!(header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.D3DFMT_DXT3
+                if (!(header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.D3DFMT_DXT5
                     || (header.PixelFormat.FourCC == Pfim.CompressionAlgorithm.DX10 && 
                         (dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC3_UNORM || dxt10Header.DxgiFormat == Pfim.DxgiFormat.BC3_UNORM_SRGB)
                         ))

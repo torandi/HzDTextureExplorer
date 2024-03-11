@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace HzdTextureExplorer
+namespace HzdTextureLib
 {
     public class UITexture : BaseItem
     {
@@ -57,14 +57,11 @@ namespace HzdTextureExplorer
         {
             base.ReadInternal(stream, reader);
 
-            m_name[0] = Helper.ReadString(reader);
-            m_name[1] = Helper.ReadString(reader);
+            string Name = Helper.ReadString(reader);
+            string TextureName = Helper.ReadString(reader);
 
-            if(m_name[0] == m_name[1])
-            {
-                m_name[0] += "_0";
-                m_name[1] += "_1";
-            }
+            m_name[0] = TextureName + "_0";
+            m_name[1] = TextureName + "_1";
 
             m_initialSize = ImageSize.ReadUint(reader);
 
@@ -139,6 +136,7 @@ namespace HzdTextureExplorer
         public virtual void UpdateImageData(string fileName)
         {
             m_base.Datas[m_index].UpdateFromFile(fileName, m_base.Core);
+            m_base.Images[m_index] = new DDSImage(m_base.Core.OpenImage(m_base.Datas[m_index]));
         }
     }
 
