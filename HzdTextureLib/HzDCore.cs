@@ -46,6 +46,7 @@ namespace HzdTextureLib
             m_file = path;
 
             ReadCore(core);
+            core.Close();
         }
 
         private void ReadCore(FileStream core)
